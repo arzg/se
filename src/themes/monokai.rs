@@ -1,33 +1,33 @@
 pub(crate) struct Monokai;
 
-const FADED: syntax::Rgb = syntax::rgb!(117, 113, 94);
+const FADED: dialect::Rgb = dialect::rgb!(117, 113, 94);
 
-const CYAN: syntax::Rgb = syntax::rgb!(102, 217, 239);
-const GREEN: syntax::Rgb = syntax::rgb!(166, 226, 46);
-const ORANGE: syntax::Rgb = syntax::rgb!(253, 151, 31);
-const PINK: syntax::Rgb = syntax::rgb!(249, 38, 114);
-const PURPLE: syntax::Rgb = syntax::rgb!(174, 129, 255);
-const YELLOW: syntax::Rgb = syntax::rgb!(230, 219, 116);
+const CYAN: dialect::Rgb = dialect::rgb!(102, 217, 239);
+const GREEN: dialect::Rgb = dialect::rgb!(166, 226, 46);
+const ORANGE: dialect::Rgb = dialect::rgb!(253, 151, 31);
+const PINK: dialect::Rgb = dialect::rgb!(249, 38, 114);
+const PURPLE: dialect::Rgb = dialect::rgb!(174, 129, 255);
+const YELLOW: dialect::Rgb = dialect::rgb!(230, 219, 116);
 
-impl syntax::Theme for Monokai {
-    fn default_style(&self) -> syntax::ResolvedStyle {
-        syntax::ResolvedStyle {
-            fg_color: syntax::rgb!(248, 248, 242),
-            bg_color: syntax::rgb!(39, 40, 34),
+impl dialect::Theme for Monokai {
+    fn default_style(&self) -> dialect::ResolvedStyle {
+        dialect::ResolvedStyle {
+            fg_color: dialect::rgb!(248, 248, 242),
+            bg_color: dialect::rgb!(39, 40, 34),
             is_bold: false,
             is_italic: false,
             is_underline: false,
         }
     }
 
-    fn style(&self, group: syntax::HighlightGroup) -> syntax::Style {
+    fn style(&self, group: dialect::HighlightGroup) -> dialect::Style {
         match group {
             // Control flow and operators
-            syntax::HighlightGroup::CtrlFlowKeyword
-            | syntax::HighlightGroup::PointerOper
-            | syntax::HighlightGroup::AssignOper
-            | syntax::HighlightGroup::BinaryOper
-            | syntax::HighlightGroup::OtherOper => syntax::Style {
+            dialect::HighlightGroup::CtrlFlowKeyword
+            | dialect::HighlightGroup::PointerOper
+            | dialect::HighlightGroup::AssignOper
+            | dialect::HighlightGroup::BinaryOper
+            | dialect::HighlightGroup::OtherOper => dialect::Style {
                 fg_color: Some(PINK),
                 bg_color: None,
                 is_bold: false,
@@ -35,7 +35,7 @@ impl syntax::Theme for Monokai {
                 is_underline: false,
             },
 
-            syntax::HighlightGroup::OtherKeyword => syntax::Style {
+            dialect::HighlightGroup::OtherKeyword => dialect::Style {
                 fg_color: Some(CYAN),
                 bg_color: None,
                 is_bold: false,
@@ -43,10 +43,10 @@ impl syntax::Theme for Monokai {
                 is_underline: false,
             },
 
-            syntax::HighlightGroup::FunctionDef
-            | syntax::HighlightGroup::TyDef
-            | syntax::HighlightGroup::InterfaceDef
-            | syntax::HighlightGroup::MacroDef => syntax::Style {
+            dialect::HighlightGroup::FunctionDef
+            | dialect::HighlightGroup::TyDef
+            | dialect::HighlightGroup::InterfaceDef
+            | dialect::HighlightGroup::MacroDef => dialect::Style {
                 fg_color: Some(GREEN),
                 bg_color: None,
                 is_bold: false,
@@ -54,9 +54,9 @@ impl syntax::Theme for Monokai {
                 is_underline: false,
             },
 
-            syntax::HighlightGroup::FunctionCall
-            | syntax::HighlightGroup::MacroUse
-            | syntax::HighlightGroup::PreProc => syntax::Style {
+            dialect::HighlightGroup::FunctionCall
+            | dialect::HighlightGroup::MacroUse
+            | dialect::HighlightGroup::PreProc => dialect::Style {
                 fg_color: Some(CYAN),
                 bg_color: None,
                 is_bold: false,
@@ -64,9 +64,9 @@ impl syntax::Theme for Monokai {
                 is_underline: false,
             },
 
-            syntax::HighlightGroup::TyUse
-            | syntax::HighlightGroup::InterfaceUse
-            | syntax::HighlightGroup::PrimitiveTy => syntax::Style {
+            dialect::HighlightGroup::TyUse
+            | dialect::HighlightGroup::InterfaceUse
+            | dialect::HighlightGroup::PrimitiveTy => dialect::Style {
                 fg_color: Some(CYAN),
                 bg_color: None,
                 is_bold: false,
@@ -75,12 +75,12 @@ impl syntax::Theme for Monokai {
             },
 
             // Variables, members and modules don’t get any highlighting
-            syntax::HighlightGroup::VariableDef
-            | syntax::HighlightGroup::VariableUse
-            | syntax::HighlightGroup::MemberDef
-            | syntax::HighlightGroup::MemberUse
-            | syntax::HighlightGroup::ModuleDef
-            | syntax::HighlightGroup::ModuleUse => syntax::Style {
+            dialect::HighlightGroup::VariableDef
+            | dialect::HighlightGroup::VariableUse
+            | dialect::HighlightGroup::MemberDef
+            | dialect::HighlightGroup::MemberUse
+            | dialect::HighlightGroup::ModuleDef
+            | dialect::HighlightGroup::ModuleUse => dialect::Style {
                 fg_color: None,
                 bg_color: None,
                 is_bold: false,
@@ -88,8 +88,8 @@ impl syntax::Theme for Monokai {
                 is_underline: false,
             },
 
-            syntax::HighlightGroup::SpecialIdentDef | syntax::HighlightGroup::SpecialIdentUse => {
-                syntax::Style {
+            dialect::HighlightGroup::SpecialIdentDef | dialect::HighlightGroup::SpecialIdentUse => {
+                dialect::Style {
                     fg_color: Some(PURPLE),
                     bg_color: None,
                     is_bold: false,
@@ -98,7 +98,7 @@ impl syntax::Theme for Monokai {
                 }
             }
 
-            syntax::HighlightGroup::FunctionParam => syntax::Style {
+            dialect::HighlightGroup::FunctionParam => dialect::Style {
                 fg_color: Some(ORANGE),
                 bg_color: None,
                 is_bold: false,
@@ -107,12 +107,12 @@ impl syntax::Theme for Monokai {
             },
 
             // Constants and literals (apart from strings)
-            syntax::HighlightGroup::ConstantDef
-            | syntax::HighlightGroup::ConstantUse
-            | syntax::HighlightGroup::Number
-            | syntax::HighlightGroup::Character
-            | syntax::HighlightGroup::CharacterDelimiter
-            | syntax::HighlightGroup::Boolean => syntax::Style {
+            dialect::HighlightGroup::ConstantDef
+            | dialect::HighlightGroup::ConstantUse
+            | dialect::HighlightGroup::Number
+            | dialect::HighlightGroup::Character
+            | dialect::HighlightGroup::CharacterDelimiter
+            | dialect::HighlightGroup::Boolean => dialect::Style {
                 fg_color: Some(PURPLE),
                 bg_color: None,
                 is_bold: false,
@@ -120,8 +120,8 @@ impl syntax::Theme for Monokai {
                 is_underline: false,
             },
 
-            syntax::HighlightGroup::String | syntax::HighlightGroup::StringDelimiter => {
-                syntax::Style {
+            dialect::HighlightGroup::String | dialect::HighlightGroup::StringDelimiter => {
+                dialect::Style {
                     fg_color: Some(YELLOW),
                     bg_color: None,
                     is_bold: false,
@@ -130,7 +130,17 @@ impl syntax::Theme for Monokai {
                 }
             }
 
-            syntax::HighlightGroup::Comment | syntax::HighlightGroup::DocComment => syntax::Style {
+            dialect::HighlightGroup::Comment | dialect::HighlightGroup::DocComment => {
+                dialect::Style {
+                    fg_color: Some(FADED),
+                    bg_color: None,
+                    is_bold: false,
+                    is_italic: false,
+                    is_underline: false,
+                }
+            }
+
+            dialect::HighlightGroup::Attribute => dialect::Style {
                 fg_color: Some(FADED),
                 bg_color: None,
                 is_bold: false,
@@ -138,15 +148,7 @@ impl syntax::Theme for Monokai {
                 is_underline: false,
             },
 
-            syntax::HighlightGroup::Attribute => syntax::Style {
-                fg_color: Some(FADED),
-                bg_color: None,
-                is_bold: false,
-                is_italic: false,
-                is_underline: false,
-            },
-
-            syntax::HighlightGroup::Error => syntax::Style {
+            dialect::HighlightGroup::Error => dialect::Style {
                 fg_color: Some(PINK),
                 bg_color: None,
                 is_bold: false,
@@ -155,10 +157,10 @@ impl syntax::Theme for Monokai {
             },
 
             // Miscellaneous punctuation that doesn’t get highlighted
-            syntax::HighlightGroup::MemberOper
-            | syntax::HighlightGroup::Delimiter
-            | syntax::HighlightGroup::Separator
-            | syntax::HighlightGroup::Terminator => syntax::Style {
+            dialect::HighlightGroup::MemberOper
+            | dialect::HighlightGroup::Delimiter
+            | dialect::HighlightGroup::Separator
+            | dialect::HighlightGroup::Terminator => dialect::Style {
                 fg_color: None,
                 bg_color: None,
                 is_bold: false,

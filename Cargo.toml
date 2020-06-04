@@ -1,5 +1,5 @@
 [package]
-name = "editor"
+name = "se"
 version = "0.1.0"
 authors = ["Aramis Razzaghipour <aramisnoah@gmail.com>"]
 edition = "2018"
@@ -10,8 +10,7 @@ edition = "2018"
 ansi_term = "0.12"
 anyhow = "1"
 crossterm = "0.17"
-foreignfjordfunc-derive = { path = "../foreignfjordfunc-derive" }
 itertools = "0.9"
-libfjord = { path = "../libfjord" }
-syntax = { path = "../syntax" }
-syntax-rust = { path = "../syntax-rust" }
+dialect = "0.1"
+structopt = "0.3"
+syntax-rust = "0.1"

@@ -1,30 +1,30 @@
 pub(crate) struct Dracula;
 
-const FADED: syntax::Rgb = syntax::rgb!(98, 114, 164);
-const RED: syntax::Rgb = syntax::rgb!(255, 85, 85);
-const ORANGE: syntax::Rgb = syntax::rgb!(255, 184, 108);
-const YELLOW: syntax::Rgb = syntax::rgb!(241, 250, 140);
-const GREEN: syntax::Rgb = syntax::rgb!(80, 250, 123);
-const PURPLE: syntax::Rgb = syntax::rgb!(189, 147, 249);
-const CYAN: syntax::Rgb = syntax::rgb!(139, 233, 253);
-const PINK: syntax::Rgb = syntax::rgb!(255, 121, 198);
+const FADED: dialect::Rgb = dialect::rgb!(98, 114, 164);
+const RED: dialect::Rgb = dialect::rgb!(255, 85, 85);
+const ORANGE: dialect::Rgb = dialect::rgb!(255, 184, 108);
+const YELLOW: dialect::Rgb = dialect::rgb!(241, 250, 140);
+const GREEN: dialect::Rgb = dialect::rgb!(80, 250, 123);
+const PURPLE: dialect::Rgb = dialect::rgb!(189, 147, 249);
+const CYAN: dialect::Rgb = dialect::rgb!(139, 233, 253);
+const PINK: dialect::Rgb = dialect::rgb!(255, 121, 198);
 
-impl syntax::Theme for Dracula {
-    fn default_style(&self) -> syntax::ResolvedStyle {
-        syntax::ResolvedStyle {
-            fg_color: syntax::rgb!(248, 248, 242),
-            bg_color: syntax::rgb!(40, 42, 54),
+impl dialect::Theme for Dracula {
+    fn default_style(&self) -> dialect::ResolvedStyle {
+        dialect::ResolvedStyle {
+            fg_color: dialect::rgb!(248, 248, 242),
+            bg_color: dialect::rgb!(40, 42, 54),
             is_bold: false,
             is_italic: false,
             is_underline: false,
         }
     }
 
-    fn style(&self, group: syntax::HighlightGroup) -> syntax::Style {
+    fn style(&self, group: dialect::HighlightGroup) -> dialect::Style {
         match group {
             // Keywords
-            syntax::HighlightGroup::CtrlFlowKeyword | syntax::HighlightGroup::OtherKeyword => {
-                syntax::Style {
+            dialect::HighlightGroup::CtrlFlowKeyword | dialect::HighlightGroup::OtherKeyword => {
+                dialect::Style {
                     fg_color: Some(PINK),
                     bg_color: None,
                     is_bold: false,
@@ -34,8 +34,8 @@ impl syntax::Theme for Dracula {
             }
 
             // Functions
-            syntax::HighlightGroup::FunctionDef | syntax::HighlightGroup::FunctionCall => {
-                syntax::Style {
+            dialect::HighlightGroup::FunctionDef | dialect::HighlightGroup::FunctionCall => {
+                dialect::Style {
                     fg_color: Some(GREEN),
                     bg_color: None,
                     is_bold: false,
@@ -45,9 +45,9 @@ impl syntax::Theme for Dracula {
             }
 
             // Types
-            syntax::HighlightGroup::TyDef
-            | syntax::HighlightGroup::TyUse
-            | syntax::HighlightGroup::PrimitiveTy => syntax::Style {
+            dialect::HighlightGroup::TyDef
+            | dialect::HighlightGroup::TyUse
+            | dialect::HighlightGroup::PrimitiveTy => dialect::Style {
                 fg_color: Some(CYAN),
                 bg_color: None,
                 is_bold: false,
@@ -56,8 +56,8 @@ impl syntax::Theme for Dracula {
             },
 
             // Interfaces
-            syntax::HighlightGroup::InterfaceDef | syntax::HighlightGroup::InterfaceUse => {
-                syntax::Style {
+            dialect::HighlightGroup::InterfaceDef | dialect::HighlightGroup::InterfaceUse => {
+                dialect::Style {
                     fg_color: Some(CYAN),
                     bg_color: None,
                     is_bold: false,
@@ -67,10 +67,10 @@ impl syntax::Theme for Dracula {
             }
 
             // Variables
-            syntax::HighlightGroup::VariableDef
-            | syntax::HighlightGroup::VariableUse
-            | syntax::HighlightGroup::MemberDef
-            | syntax::HighlightGroup::MemberUse => syntax::Style {
+            dialect::HighlightGroup::VariableDef
+            | dialect::HighlightGroup::VariableUse
+            | dialect::HighlightGroup::MemberDef
+            | dialect::HighlightGroup::MemberUse => dialect::Style {
                 fg_color: None,
                 bg_color: None,
                 is_bold: false,
@@ -79,7 +79,7 @@ impl syntax::Theme for Dracula {
             },
 
             // Function parameters
-            syntax::HighlightGroup::FunctionParam => syntax::Style {
+            dialect::HighlightGroup::FunctionParam => dialect::Style {
                 fg_color: Some(ORANGE),
                 bg_color: None,
                 is_bold: false,
@@ -88,12 +88,12 @@ impl syntax::Theme for Dracula {
             },
 
             // Constants
-            syntax::HighlightGroup::ConstantDef
-            | syntax::HighlightGroup::ConstantUse
-            | syntax::HighlightGroup::Number
-            | syntax::HighlightGroup::Boolean
-            | syntax::HighlightGroup::Character
-            | syntax::HighlightGroup::CharacterDelimiter => syntax::Style {
+            dialect::HighlightGroup::ConstantDef
+            | dialect::HighlightGroup::ConstantUse
+            | dialect::HighlightGroup::Number
+            | dialect::HighlightGroup::Boolean
+            | dialect::HighlightGroup::Character
+            | dialect::HighlightGroup::CharacterDelimiter => dialect::Style {
                 fg_color: Some(PURPLE),
                 bg_color: None,
                 is_bold: false,
@@ -102,8 +102,8 @@ impl syntax::Theme for Dracula {
             },
 
             // Modules
-            syntax::HighlightGroup::ModuleDef | syntax::HighlightGroup::ModuleUse => {
-                syntax::Style {
+            dialect::HighlightGroup::ModuleDef | dialect::HighlightGroup::ModuleUse => {
+                dialect::Style {
                     fg_color: None,
                     bg_color: None,
                     is_bold: false,
@@ -113,9 +113,9 @@ impl syntax::Theme for Dracula {
             }
 
             // Macros and other preprocessor-related highlight groups
-            syntax::HighlightGroup::MacroDef
-            | syntax::HighlightGroup::MacroUse
-            | syntax::HighlightGroup::PreProc => syntax::Style {
+            dialect::HighlightGroup::MacroDef
+            | dialect::HighlightGroup::MacroUse
+            | dialect::HighlightGroup::PreProc => dialect::Style {
                 fg_color: Some(CYAN),
                 bg_color: None,
                 is_bold: false,
@@ -124,7 +124,7 @@ impl syntax::Theme for Dracula {
             },
 
             // Attributes
-            syntax::HighlightGroup::Attribute => syntax::Style {
+            dialect::HighlightGroup::Attribute => dialect::Style {
                 fg_color: Some(GREEN),
                 bg_color: None,
                 is_bold: false,
@@ -133,8 +133,8 @@ impl syntax::Theme for Dracula {
             },
 
             // Strings
-            syntax::HighlightGroup::String | syntax::HighlightGroup::StringDelimiter => {
-                syntax::Style {
+            dialect::HighlightGroup::String | dialect::HighlightGroup::StringDelimiter => {
+                dialect::Style {
                     fg_color: Some(YELLOW),
                     bg_color: None,
                     is_bold: false,
@@ -144,8 +144,8 @@ impl syntax::Theme for Dracula {
             }
 
             // Special identifiers
-            syntax::HighlightGroup::SpecialIdentDef | syntax::HighlightGroup::SpecialIdentUse => {
-                syntax::Style {
+            dialect::HighlightGroup::SpecialIdentDef | dialect::HighlightGroup::SpecialIdentUse => {
+                dialect::Style {
                     fg_color: Some(GREEN),
                     bg_color: None,
                     is_bold: false,
@@ -155,20 +155,22 @@ impl syntax::Theme for Dracula {
             }
 
             // Comments
-            syntax::HighlightGroup::Comment | syntax::HighlightGroup::DocComment => syntax::Style {
-                fg_color: Some(FADED),
-                bg_color: None,
-                is_bold: false,
-                is_italic: false,
-                is_underline: false,
-            },
+            dialect::HighlightGroup::Comment | dialect::HighlightGroup::DocComment => {
+                dialect::Style {
+                    fg_color: Some(FADED),
+                    bg_color: None,
+                    is_bold: false,
+                    is_italic: false,
+                    is_underline: false,
+                }
+            }
 
             // Some punctuation gets a colour
-            syntax::HighlightGroup::PointerOper
-            | syntax::HighlightGroup::AssignOper
-            | syntax::HighlightGroup::BinaryOper
-            | syntax::HighlightGroup::OtherOper
-            | syntax::HighlightGroup::Separator => syntax::Style {
+            dialect::HighlightGroup::PointerOper
+            | dialect::HighlightGroup::AssignOper
+            | dialect::HighlightGroup::BinaryOper
+            | dialect::HighlightGroup::OtherOper
+            | dialect::HighlightGroup::Separator => dialect::Style {
                 fg_color: Some(PINK),
                 bg_color: None,
                 is_bold: false,
@@ -177,9 +179,9 @@ impl syntax::Theme for Dracula {
             },
 
             // Other punctuation doesn’t
-            syntax::HighlightGroup::MemberOper
-            | syntax::HighlightGroup::Delimiter
-            | syntax::HighlightGroup::Terminator => syntax::Style {
+            dialect::HighlightGroup::MemberOper
+            | dialect::HighlightGroup::Delimiter
+            | dialect::HighlightGroup::Terminator => dialect::Style {
                 fg_color: None,
                 bg_color: None,
                 is_bold: false,
@@ -188,7 +190,7 @@ impl syntax::Theme for Dracula {
             },
 
             // Errors
-            syntax::HighlightGroup::Error => syntax::Style {
+            dialect::HighlightGroup::Error => dialect::Style {
                 fg_color: Some(RED),
                 bg_color: None,
                 is_bold: false,

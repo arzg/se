@@ -2,80 +2,20 @@
 
 mod themes;
 
-use {
-    foreignfjordfunc_derive::ForeignFjordFunc,
-    std::{
-        convert::TryInto,
-        io::{self, Write},
-        path::Path,
-    },
+use std::{
+    convert::TryInto,
+    io::{self, Write},
+    path::Path,
 };
 
-#[derive(Debug, ForeignFjordFunc)]
+#[derive(Debug)]
 struct Editor {
     // TODO: Add support for paths to Fjord.
     file: String,
 }
 
-impl Editor {
-    fn run(self) -> libfjord::eval::OutputExpr {
-        if let Err(e) = run(self.file) {
-            eprintln!("Error: {}", e);
-        }
-
-        // The editor doesn’t return anything.
-        libfjord::eval::OutputExpr::Unit
-    }
-}
-
-fn run(path: impl AsRef<Path>) -> anyhow::Result<()> {
-    use crossterm::{
-        event::{self, KeyCode, KeyModifiers},
-        queue, terminal,
-    };
-
-    // Attempt to load the given file before doing anything else.
-    let mut buffer = Buffer::new(path)?;
-
-    let mut stdout = io::stdout();
-
-    queue!(stdout, terminal::EnterAlternateScreen)?;
-    terminal::enable_raw_mode()?;
-
-    buffer.initialize_terminal(&mut stdout)?;
-    buffer.redraw(&mut stdout)?;
-
-    loop {
-        if let event::Event::Key(k) = event::read()? {
-            match (k.code, k.modifiers) {
-                (c, KeyModifiers::NONE) => match c {
-                    KeyCode::Up => buffer.move_cursor(Direction::Up),
-                    KeyCode::Down => buffer.move_cursor(Direction::Down),
-                    KeyCode::Left => buffer.move_cursor(Direction::Left),
-                    KeyCode::Right => buffer.move_cursor(Direction::Right),
-                    KeyCode::Backspace => buffer.backspace(),
-                    KeyCode::Enter => buffer.insert_newline(),
-                    KeyCode::Char(c) => buffer.insert_char(c),
-                    _ => (),
-                },
-                // Quit on C-q
-                (KeyCode::Char('q'), KeyModifiers::CONTROL) => break,
-                _ => (),
-            }
-        }
-
-        buffer.redraw(&mut stdout)?;
-    }
-
-    terminal::disable_raw_mode()?;
-    queue!(stdout, terminal::LeaveAlternateScreen)?;
-    stdout.flush()?;
-
-    Ok(())
-}
-
 #[derive(Debug)]
-struct Buffer {
+pub struct Buffer {
     rows: Vec<String>,
     top_line: usize,
     left_col: usize,
@@ -85,7 +25,8 @@ struct Buffer {
     window_cols: usize,
 }
 
-enum Direction {
+#[derive(Debug)]
+pub enum Direction {
     Up,
     Down,
     Left,
@@ -96,7 +37,7 @@ impl Buffer {
     // Hardcode the theme to default to Gruvbox.
     const THEME: themes::Gruvbox = themes::Gruvbox;
 
-    fn new(path: impl AsRef<Path>) -> anyhow::Result<Self> {
+    pub fn new(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         use crossterm::terminal;
 
         let (cols, lines) = terminal::size()?;
@@ -152,7 +93,7 @@ impl Buffer {
         }
     }
 
-    fn move_cursor(&mut self, direction: Direction) {
+    pub fn move_cursor(&mut self, direction: Direction) {
         match direction {
             Direction::Up => {
                 if !self.is_on_first_line() {
@@ -199,12 +140,12 @@ impl Buffer {
         }
     }
 
-    fn insert_char(&mut self, c: char) {
+    pub fn insert_char(&mut self, c: char) {
         self.rows[self.line_nr].insert(self.col_nr, c);
         self.move_cursor(Direction::Right);
     }
 
-    fn insert_newline(&mut self) {
+    pub fn insert_newline(&mut self) {
         // If we’re on the first or last column then we can simply add a new line. Otherwise, we
         // split the current line at the cursor’s position.
         if self.is_on_first_col() {
@@ -222,7 +163,7 @@ impl Buffer {
         self.move_cursor(Direction::Down);
     }
 
-    fn backspace(&mut self) {
+    pub fn backspace(&mut self) {
         let was_on_first_col = self.is_on_first_col();
 
         // TODO: it would be cleaner if this was moved to the end of this function.
@@ -256,10 +197,10 @@ impl Buffer {
     }
 
     // All this function does is cover the the terminal in the colors of the theme.
-    fn initialize_terminal(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+    pub fn initialize_terminal(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
         use {
             crossterm::{cursor, queue, terminal},
-            syntax::Theme,
+            dialect::Theme,
         };
 
         let default_style: ansi_term::Style = Self::THEME.default_style().into();
@@ -279,7 +220,7 @@ impl Buffer {
         Ok(())
     }
 
-    fn redraw(&mut self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+    pub fn redraw(&mut self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
         use {
             crossterm::{cursor, execute, queue, terminal},
             itertools::Itertools,
@@ -350,13 +291,13 @@ impl Buffer {
 
 // This function highlights the input, renders this with a given theme, adds escape sequences to
 // switch between the theme’s colors, and finally collects this into a string.
-fn render<T: syntax::Theme>(input: &str, theme: T) -> String {
+fn render<T: dialect::Theme>(input: &str, theme: T) -> String {
     let default_style: ansi_term::Style = theme.default_style().into();
 
     // Hardcode Rust syntax highlighting for now.
-    syntax::render(input, syntax_rust::RustHighlighter, theme)
+    dialect::render(input, syntax_rust::RustHighlighter, theme)
         .into_iter()
-        .map(|syntax::StyledSpan { text, style }| {
+        .map(|dialect::StyledSpan { text, style }| {
             let style: ansi_term::Style = style.into();
 
             format!(

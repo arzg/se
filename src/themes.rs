@@ -6,6 +6,7 @@ mod nord;
 mod seoul;
 mod solarized;
 
+#[allow(unused_imports)]
 pub(crate) use {
     dark_plus::DarkPlus,
     dracula::Dracula,

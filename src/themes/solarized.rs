@@ -1,23 +1,23 @@
-const BASE03: syntax::Rgb = syntax::rgb!(0, 43, 54);
-const BASE01: syntax::Rgb = syntax::rgb!(88, 110, 117);
-const BASE00: syntax::Rgb = syntax::rgb!(101, 123, 131);
-const BASE0: syntax::Rgb = syntax::rgb!(131, 148, 150);
-const BASE1: syntax::Rgb = syntax::rgb!(147, 161, 161);
-const BASE3: syntax::Rgb = syntax::rgb!(253, 246, 227);
-const YELLOW: syntax::Rgb = syntax::rgb!(181, 137, 0);
-const ORANGE: syntax::Rgb = syntax::rgb!(203, 75, 22);
-const RED: syntax::Rgb = syntax::rgb!(220, 50, 47);
-const BLUE: syntax::Rgb = syntax::rgb!(38, 139, 210);
-const CYAN: syntax::Rgb = syntax::rgb!(42, 161, 152);
-const GREEN: syntax::Rgb = syntax::rgb!(133, 153, 0);
+const BASE03: dialect::Rgb = dialect::rgb!(0, 43, 54);
+const BASE01: dialect::Rgb = dialect::rgb!(88, 110, 117);
+const BASE00: dialect::Rgb = dialect::rgb!(101, 123, 131);
+const BASE0: dialect::Rgb = dialect::rgb!(131, 148, 150);
+const BASE1: dialect::Rgb = dialect::rgb!(147, 161, 161);
+const BASE3: dialect::Rgb = dialect::rgb!(253, 246, 227);
+const YELLOW: dialect::Rgb = dialect::rgb!(181, 137, 0);
+const ORANGE: dialect::Rgb = dialect::rgb!(203, 75, 22);
+const RED: dialect::Rgb = dialect::rgb!(220, 50, 47);
+const BLUE: dialect::Rgb = dialect::rgb!(38, 139, 210);
+const CYAN: dialect::Rgb = dialect::rgb!(42, 161, 152);
+const GREEN: dialect::Rgb = dialect::rgb!(133, 153, 0);
 
 macro_rules! create_solarized_theme {
     ($theme_name: ident, $fg: expr, $bg: expr, $deemphasized: expr) => {
         pub(crate) struct $theme_name;
 
-        impl syntax::Theme for $theme_name {
-            fn default_style(&self) -> syntax::ResolvedStyle {
-                syntax::ResolvedStyle {
+        impl dialect::Theme for $theme_name {
+            fn default_style(&self) -> dialect::ResolvedStyle {
+                dialect::ResolvedStyle {
                     fg_color: $fg,
                     bg_color: $bg,
                     is_bold: false,
@@ -26,10 +26,10 @@ macro_rules! create_solarized_theme {
                 }
             }
 
-            fn style(&self, group: syntax::HighlightGroup) -> syntax::Style {
+            fn style(&self, group: dialect::HighlightGroup) -> dialect::Style {
                 match group {
-                    syntax::HighlightGroup::CtrlFlowKeyword
-                    | syntax::HighlightGroup::OtherKeyword => syntax::Style {
+                    dialect::HighlightGroup::CtrlFlowKeyword
+                    | dialect::HighlightGroup::OtherKeyword => dialect::Style {
                         fg_color: Some(GREEN),
                         bg_color: None,
                         is_bold: false,
@@ -38,17 +38,17 @@ macro_rules! create_solarized_theme {
                     },
 
                     // ‘Identifiers’ (functions, variables, modules)
-                    syntax::HighlightGroup::FunctionDef
-                    | syntax::HighlightGroup::FunctionCall
-                    | syntax::HighlightGroup::VariableDef
-                    | syntax::HighlightGroup::VariableUse
-                    | syntax::HighlightGroup::MemberDef
-                    | syntax::HighlightGroup::MemberUse
-                    | syntax::HighlightGroup::SpecialIdentDef
-                    | syntax::HighlightGroup::SpecialIdentUse
-                    | syntax::HighlightGroup::FunctionParam
-                    | syntax::HighlightGroup::ModuleDef
-                    | syntax::HighlightGroup::ModuleUse => syntax::Style {
+                    dialect::HighlightGroup::FunctionDef
+                    | dialect::HighlightGroup::FunctionCall
+                    | dialect::HighlightGroup::VariableDef
+                    | dialect::HighlightGroup::VariableUse
+                    | dialect::HighlightGroup::MemberDef
+                    | dialect::HighlightGroup::MemberUse
+                    | dialect::HighlightGroup::SpecialIdentDef
+                    | dialect::HighlightGroup::SpecialIdentUse
+                    | dialect::HighlightGroup::FunctionParam
+                    | dialect::HighlightGroup::ModuleDef
+                    | dialect::HighlightGroup::ModuleUse => dialect::Style {
                         fg_color: Some(BLUE),
                         bg_color: None,
                         is_bold: false,
@@ -57,14 +57,14 @@ macro_rules! create_solarized_theme {
                     },
 
                     // Constants of any kind
-                    syntax::HighlightGroup::ConstantDef
-                    | syntax::HighlightGroup::ConstantUse
-                    | syntax::HighlightGroup::Number
-                    | syntax::HighlightGroup::String
-                    | syntax::HighlightGroup::StringDelimiter
-                    | syntax::HighlightGroup::Character
-                    | syntax::HighlightGroup::CharacterDelimiter
-                    | syntax::HighlightGroup::Boolean => syntax::Style {
+                    dialect::HighlightGroup::ConstantDef
+                    | dialect::HighlightGroup::ConstantUse
+                    | dialect::HighlightGroup::Number
+                    | dialect::HighlightGroup::String
+                    | dialect::HighlightGroup::StringDelimiter
+                    | dialect::HighlightGroup::Character
+                    | dialect::HighlightGroup::CharacterDelimiter
+                    | dialect::HighlightGroup::Boolean => dialect::Style {
                         fg_color: Some(CYAN),
                         bg_color: None,
                         is_bold: false,
@@ -72,11 +72,11 @@ macro_rules! create_solarized_theme {
                         is_underline: false,
                     },
 
-                    syntax::HighlightGroup::TyDef
-                    | syntax::HighlightGroup::TyUse
-                    | syntax::HighlightGroup::InterfaceDef
-                    | syntax::HighlightGroup::InterfaceUse
-                    | syntax::HighlightGroup::PrimitiveTy => syntax::Style {
+                    dialect::HighlightGroup::TyDef
+                    | dialect::HighlightGroup::TyUse
+                    | dialect::HighlightGroup::InterfaceDef
+                    | dialect::HighlightGroup::InterfaceUse
+                    | dialect::HighlightGroup::PrimitiveTy => dialect::Style {
                         fg_color: Some(YELLOW),
                         bg_color: None,
                         is_bold: false,
@@ -84,9 +84,9 @@ macro_rules! create_solarized_theme {
                         is_underline: false,
                     },
 
-                    syntax::HighlightGroup::PreProc
-                    | syntax::HighlightGroup::MacroDef
-                    | syntax::HighlightGroup::MacroUse => syntax::Style {
+                    dialect::HighlightGroup::PreProc
+                    | dialect::HighlightGroup::MacroDef
+                    | dialect::HighlightGroup::MacroUse => dialect::Style {
                         fg_color: Some(ORANGE),
                         bg_color: None,
                         is_bold: false,
@@ -95,14 +95,14 @@ macro_rules! create_solarized_theme {
                     },
 
                     // Punctuation gets no highlighting
-                    syntax::HighlightGroup::MemberOper
-                    | syntax::HighlightGroup::PointerOper
-                    | syntax::HighlightGroup::AssignOper
-                    | syntax::HighlightGroup::BinaryOper
-                    | syntax::HighlightGroup::OtherOper
-                    | syntax::HighlightGroup::Delimiter
-                    | syntax::HighlightGroup::Separator
-                    | syntax::HighlightGroup::Terminator => syntax::Style {
+                    dialect::HighlightGroup::MemberOper
+                    | dialect::HighlightGroup::PointerOper
+                    | dialect::HighlightGroup::AssignOper
+                    | dialect::HighlightGroup::BinaryOper
+                    | dialect::HighlightGroup::OtherOper
+                    | dialect::HighlightGroup::Delimiter
+                    | dialect::HighlightGroup::Separator
+                    | dialect::HighlightGroup::Terminator => dialect::Style {
                         fg_color: None,
                         bg_color: None,
                         is_bold: false,
@@ -110,8 +110,8 @@ macro_rules! create_solarized_theme {
                         is_underline: false,
                     },
 
-                    syntax::HighlightGroup::Comment | syntax::HighlightGroup::DocComment => {
-                        syntax::Style {
+                    dialect::HighlightGroup::Comment | dialect::HighlightGroup::DocComment => {
+                        dialect::Style {
                             fg_color: Some($deemphasized),
                             bg_color: None,
                             is_bold: false,
@@ -120,7 +120,7 @@ macro_rules! create_solarized_theme {
                         }
                     }
 
-                    syntax::HighlightGroup::Attribute => syntax::Style {
+                    dialect::HighlightGroup::Attribute => dialect::Style {
                         fg_color: Some(GREEN),
                         bg_color: None,
                         is_bold: false,
@@ -128,7 +128,7 @@ macro_rules! create_solarized_theme {
                         is_underline: false,
                     },
 
-                    syntax::HighlightGroup::Error => syntax::Style {
+                    dialect::HighlightGroup::Error => dialect::Style {
                         fg_color: Some(RED),
                         bg_color: None,
                         is_bold: false,

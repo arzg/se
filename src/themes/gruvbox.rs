@@ -1,30 +1,30 @@
 pub(crate) struct Gruvbox;
 
-const GRAY: syntax::Rgb = syntax::rgb!(189, 174, 147);
-const RED: syntax::Rgb = syntax::rgb!(251, 73, 52);
-const GREEN: syntax::Rgb = syntax::rgb!(184, 187, 38);
-const YELLOW: syntax::Rgb = syntax::rgb!(250, 189, 47);
-const BLUE: syntax::Rgb = syntax::rgb!(131, 165, 152);
-const PURPLE: syntax::Rgb = syntax::rgb!(211, 134, 155);
-const AQUA: syntax::Rgb = syntax::rgb!(142, 192, 124);
-const ORANGE: syntax::Rgb = syntax::rgb!(254, 128, 25);
+const GRAY: dialect::Rgb = dialect::rgb!(189, 174, 147);
+const RED: dialect::Rgb = dialect::rgb!(251, 73, 52);
+const GREEN: dialect::Rgb = dialect::rgb!(184, 187, 38);
+const YELLOW: dialect::Rgb = dialect::rgb!(250, 189, 47);
+const BLUE: dialect::Rgb = dialect::rgb!(131, 165, 152);
+const PURPLE: dialect::Rgb = dialect::rgb!(211, 134, 155);
+const AQUA: dialect::Rgb = dialect::rgb!(142, 192, 124);
+const ORANGE: dialect::Rgb = dialect::rgb!(254, 128, 25);
 
-impl syntax::Theme for Gruvbox {
-    fn default_style(&self) -> syntax::ResolvedStyle {
-        syntax::ResolvedStyle {
-            fg_color: syntax::rgb!(235, 219, 178),
-            bg_color: syntax::rgb!(29, 32, 33),
+impl dialect::Theme for Gruvbox {
+    fn default_style(&self) -> dialect::ResolvedStyle {
+        dialect::ResolvedStyle {
+            fg_color: dialect::rgb!(235, 219, 178),
+            bg_color: dialect::rgb!(29, 32, 33),
             is_bold: false,
             is_italic: false,
             is_underline: false,
         }
     }
 
-    fn style(&self, group: syntax::HighlightGroup) -> syntax::Style {
+    fn style(&self, group: dialect::HighlightGroup) -> dialect::Style {
         match group {
             // Keywords
-            syntax::HighlightGroup::CtrlFlowKeyword | syntax::HighlightGroup::OtherKeyword => {
-                syntax::Style {
+            dialect::HighlightGroup::CtrlFlowKeyword | dialect::HighlightGroup::OtherKeyword => {
+                dialect::Style {
                     fg_color: Some(RED),
                     bg_color: None,
                     is_bold: true,
@@ -34,8 +34,8 @@ impl syntax::Theme for Gruvbox {
             }
 
             // Functions
-            syntax::HighlightGroup::FunctionDef | syntax::HighlightGroup::FunctionCall => {
-                syntax::Style {
+            dialect::HighlightGroup::FunctionDef | dialect::HighlightGroup::FunctionCall => {
+                dialect::Style {
                     fg_color: Some(GREEN),
                     bg_color: None,
                     is_bold: false,
@@ -45,11 +45,11 @@ impl syntax::Theme for Gruvbox {
             }
 
             // Types
-            syntax::HighlightGroup::TyDef
-            | syntax::HighlightGroup::TyUse
-            | syntax::HighlightGroup::InterfaceDef
-            | syntax::HighlightGroup::InterfaceUse
-            | syntax::HighlightGroup::PrimitiveTy => syntax::Style {
+            dialect::HighlightGroup::TyDef
+            | dialect::HighlightGroup::TyUse
+            | dialect::HighlightGroup::InterfaceDef
+            | dialect::HighlightGroup::InterfaceUse
+            | dialect::HighlightGroup::PrimitiveTy => dialect::Style {
                 fg_color: Some(YELLOW),
                 bg_color: None,
                 is_bold: false,
@@ -58,11 +58,11 @@ impl syntax::Theme for Gruvbox {
             },
 
             // Variables
-            syntax::HighlightGroup::VariableDef
-            | syntax::HighlightGroup::VariableUse
-            | syntax::HighlightGroup::MemberDef
-            | syntax::HighlightGroup::MemberUse
-            | syntax::HighlightGroup::FunctionParam => syntax::Style {
+            dialect::HighlightGroup::VariableDef
+            | dialect::HighlightGroup::VariableUse
+            | dialect::HighlightGroup::MemberDef
+            | dialect::HighlightGroup::MemberUse
+            | dialect::HighlightGroup::FunctionParam => dialect::Style {
                 fg_color: Some(BLUE),
                 bg_color: None,
                 is_bold: false,
@@ -71,10 +71,10 @@ impl syntax::Theme for Gruvbox {
             },
 
             // Constants
-            syntax::HighlightGroup::ConstantDef
-            | syntax::HighlightGroup::ConstantUse
-            | syntax::HighlightGroup::Number
-            | syntax::HighlightGroup::Boolean => syntax::Style {
+            dialect::HighlightGroup::ConstantDef
+            | dialect::HighlightGroup::ConstantUse
+            | dialect::HighlightGroup::Number
+            | dialect::HighlightGroup::Boolean => dialect::Style {
                 fg_color: Some(PURPLE),
                 bg_color: None,
                 is_bold: false,
@@ -83,8 +83,8 @@ impl syntax::Theme for Gruvbox {
             },
 
             // Modules
-            syntax::HighlightGroup::ModuleDef | syntax::HighlightGroup::ModuleUse => {
-                syntax::Style {
+            dialect::HighlightGroup::ModuleDef | dialect::HighlightGroup::ModuleUse => {
+                dialect::Style {
                     fg_color: Some(BLUE),
                     bg_color: None,
                     is_bold: false,
@@ -94,10 +94,10 @@ impl syntax::Theme for Gruvbox {
             }
 
             // Preprocessor-related
-            syntax::HighlightGroup::MacroDef
-            | syntax::HighlightGroup::MacroUse
-            | syntax::HighlightGroup::PreProc
-            | syntax::HighlightGroup::Attribute => syntax::Style {
+            dialect::HighlightGroup::MacroDef
+            | dialect::HighlightGroup::MacroUse
+            | dialect::HighlightGroup::PreProc
+            | dialect::HighlightGroup::Attribute => dialect::Style {
                 fg_color: Some(AQUA),
                 bg_color: None,
                 is_bold: false,
@@ -106,10 +106,10 @@ impl syntax::Theme for Gruvbox {
             },
 
             // String and character literals
-            syntax::HighlightGroup::String
-            | syntax::HighlightGroup::StringDelimiter
-            | syntax::HighlightGroup::Character
-            | syntax::HighlightGroup::CharacterDelimiter => syntax::Style {
+            dialect::HighlightGroup::String
+            | dialect::HighlightGroup::StringDelimiter
+            | dialect::HighlightGroup::Character
+            | dialect::HighlightGroup::CharacterDelimiter => dialect::Style {
                 fg_color: Some(GREEN),
                 bg_color: None,
                 is_bold: false,
@@ -118,8 +118,8 @@ impl syntax::Theme for Gruvbox {
             },
 
             // Special identifiers
-            syntax::HighlightGroup::SpecialIdentDef | syntax::HighlightGroup::SpecialIdentUse => {
-                syntax::Style {
+            dialect::HighlightGroup::SpecialIdentDef | dialect::HighlightGroup::SpecialIdentUse => {
+                dialect::Style {
                     fg_color: Some(ORANGE),
                     bg_color: None,
                     is_bold: false,
@@ -129,23 +129,25 @@ impl syntax::Theme for Gruvbox {
             }
 
             // Comments
-            syntax::HighlightGroup::Comment | syntax::HighlightGroup::DocComment => syntax::Style {
-                fg_color: Some(GRAY),
-                bg_color: None,
-                is_bold: false,
-                is_italic: false,
-                is_underline: false,
-            },
+            dialect::HighlightGroup::Comment | dialect::HighlightGroup::DocComment => {
+                dialect::Style {
+                    fg_color: Some(GRAY),
+                    bg_color: None,
+                    is_bold: false,
+                    is_italic: false,
+                    is_underline: false,
+                }
+            }
 
             // Punctuation
-            syntax::HighlightGroup::MemberOper
-            | syntax::HighlightGroup::PointerOper
-            | syntax::HighlightGroup::AssignOper
-            | syntax::HighlightGroup::BinaryOper
-            | syntax::HighlightGroup::OtherOper
-            | syntax::HighlightGroup::Delimiter
-            | syntax::HighlightGroup::Separator
-            | syntax::HighlightGroup::Terminator => syntax::Style {
+            dialect::HighlightGroup::MemberOper
+            | dialect::HighlightGroup::PointerOper
+            | dialect::HighlightGroup::AssignOper
+            | dialect::HighlightGroup::BinaryOper
+            | dialect::HighlightGroup::OtherOper
+            | dialect::HighlightGroup::Delimiter
+            | dialect::HighlightGroup::Separator
+            | dialect::HighlightGroup::Terminator => dialect::Style {
                 fg_color: None,
                 bg_color: None,
                 is_bold: false,
@@ -154,7 +156,7 @@ impl syntax::Theme for Gruvbox {
             },
 
             // Errors
-            syntax::HighlightGroup::Error => syntax::Style {
+            dialect::HighlightGroup::Error => dialect::Style {
                 fg_color: Some(RED),
                 bg_color: None,
                 is_bold: false,
