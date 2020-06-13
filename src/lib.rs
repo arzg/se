@@ -78,6 +78,8 @@ impl Editor {
             event::KeyCode::Right => self.cursor_x += 1,
             event::KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
             event::KeyCode::Down => self.cursor_y += 1,
+            event::KeyCode::PageUp => self.cursor_y = 0,
+            event::KeyCode::PageDown => self.cursor_y = self.screen_rows - 1,
             _ => {}
         }
 
