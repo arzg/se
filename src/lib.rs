@@ -1,7 +1,6 @@
 #![warn(rust_2018_idioms)]
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use crossterm::{cursor, execute, terminal};
+use crossterm::{cursor, event, execute, terminal};
 use std::io::{self, Write};
 
 pub fn refresh_screen(stdout: &mut io::Stdout) -> anyhow::Result<()> {
@@ -14,10 +13,10 @@ pub fn refresh_screen(stdout: &mut io::Stdout) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn process_keypress(key_event: KeyEvent) -> ControlFlow {
-    let KeyEvent { code, modifiers } = key_event;
+pub fn process_keypress(key_event: event::KeyEvent) -> ControlFlow {
+    let event::KeyEvent { code, modifiers } = key_event;
 
-    if code == KeyCode::Char('q') && modifiers == KeyModifiers::CONTROL {
+    if code == event::KeyCode::Char('q') && modifiers == event::KeyModifiers::CONTROL {
         ControlFlow::Break
     } else {
         ControlFlow::Continue
