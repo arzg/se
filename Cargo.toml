@@ -1,6 +1,6 @@
 [package]
 name = "se"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Aramis Razzaghipour <aramisnoah@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -10,10 +10,5 @@ homepage = "https://github.com/arzg/se"
 repository = "https://github.com/arzg/se"
 
 [dependencies]
-ansi_term = "0.12"
 anyhow = "1"
 crossterm = "0.17"
-itertools = "0.9"
-dialect = "0.1"
-structopt = "0.3"
-syntax-rust = "0.1"
