@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    event::{self, Event},
     terminal,
 };
 
@@ -7,16 +7,9 @@ fn main() -> anyhow::Result<()> {
     terminal::enable_raw_mode()?;
 
     loop {
-        if let Event::Key(KeyEvent { code, modifiers }) = event::read()? {
-            if code == KeyCode::Char('q') && modifiers == KeyModifiers::CONTROL {
+        if let Event::Key(key_event) = event::read()? {
+            if let se::ControlFlow::Break = se::process_keypress(key_event) {
                 break;
-            }
-
-            if let KeyCode::Char(c) = code {
-                let mut buf = [0; 4];
-                c.encode_utf8(&mut buf);
-
-                println!("{:?} ('{}')\r", buf, c);
             }
         }
     }
