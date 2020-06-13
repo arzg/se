@@ -7,13 +7,19 @@ fn main() -> anyhow::Result<()> {
 
     let mut stdout = io::stdout();
 
-    if let Err(e) = run(&mut stdout) {
+    let run_and_clear = {
+        let result = run(&mut stdout);
+
         execute!(
             stdout,
             terminal::Clear(terminal::ClearType::All),
             cursor::MoveTo(0, 0)
         )?;
 
+        result
+    };
+
+    if let Err(e) = run_and_clear {
         eprintln!("{:?}", e);
     }
 
