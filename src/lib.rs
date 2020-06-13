@@ -7,6 +7,8 @@ use std::io::{self, Write};
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
 
 pub struct Editor {
+    cursor_x: u16,
+    cursor_y: u16,
     screen_rows: u16,
     screen_cols: u16,
 }
@@ -16,6 +18,8 @@ impl Editor {
         let (screen_cols, screen_rows) = terminal::size()?;
 
         Ok(Self {
+            cursor_x: 0,
+            cursor_y: 0,
             screen_rows,
             screen_cols,
         })
@@ -23,8 +27,14 @@ impl Editor {
 
     pub fn refresh_screen(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
         queue!(stdout, cursor::Hide, cursor::MoveTo(0, 0))?;
+
         self.draw_rows(stdout)?;
-        queue!(stdout, cursor::MoveTo(0, 0), cursor::Show)?;
+
+        queue!(
+            stdout,
+            cursor::MoveTo(self.cursor_x, self.cursor_y),
+            cursor::Show
+        )?;
 
         stdout.flush()?;
 
