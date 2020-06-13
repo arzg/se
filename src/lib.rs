@@ -21,13 +21,14 @@ impl Editor {
     pub fn refresh_screen(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
         queue!(
             stdout,
+            cursor::Hide,
             terminal::Clear(terminal::ClearType::All),
             cursor::MoveTo(0, 0)
         )?;
 
         self.draw_rows(stdout)?;
 
-        queue!(stdout, cursor::MoveTo(0, 0))?;
+        queue!(stdout, cursor::MoveTo(0, 0), cursor::Show)?;
 
         stdout.flush()?;
 
