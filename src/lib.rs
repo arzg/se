@@ -35,10 +35,14 @@ impl Editor {
     }
 
     fn draw_rows(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
-        // We don’t know how high the terminal is at the moment, so we just default to 24
-        // characters.
-        for _ in 0..24 {
-            writeln!(stdout, "~\r")?;
+        let is_on_last_row = |i| i == self.screen_rows - 1;
+
+        for i in 0..self.screen_rows {
+            write!(stdout, "~")?;
+
+            if !is_on_last_row(i) {
+                writeln!(stdout, "\r")?;
+            }
         }
 
         Ok(())
