@@ -35,6 +35,8 @@ impl Editor {
         let is_on_last_row = |i| i == self.screen_rows - 1;
 
         for i in 0..self.screen_rows {
+            write!(stdout, "~")?;
+
             if i == self.screen_rows / 3 {
                 let padding_len =
                     (usize::try_from(self.screen_cols).unwrap() - WELCOME_MSG.len()) / 2;
@@ -42,8 +44,6 @@ impl Editor {
                 let padding = " ".repeat(padding_len);
 
                 write!(stdout, "{}{}", padding, WELCOME_MSG)?;
-            } else {
-                write!(stdout, "~")?;
             }
 
             queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
