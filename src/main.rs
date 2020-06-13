@@ -11,6 +11,13 @@ fn main() -> anyhow::Result<()> {
             if code == KeyCode::Char('q') {
                 break;
             }
+
+            if let KeyCode::Char(c) = code {
+                let mut buf = [0; 4];
+                c.encode_utf8(&mut buf);
+
+                println!("{:?} ('{}')\r", buf, c);
+            }
         }
     }
 
