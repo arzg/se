@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent},
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     terminal,
 };
 
@@ -8,7 +8,7 @@ fn main() -> anyhow::Result<()> {
 
     loop {
         if let Event::Key(KeyEvent { code, modifiers }) = event::read()? {
-            if code == KeyCode::Char('q') {
+            if code == KeyCode::Char('q') && modifiers == KeyModifiers::CONTROL {
                 break;
             }
 
