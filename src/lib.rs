@@ -80,6 +80,8 @@ impl Editor {
             event::KeyCode::Down => self.cursor_y += 1,
             event::KeyCode::PageUp => self.cursor_y = 0,
             event::KeyCode::PageDown => self.cursor_y = self.screen_rows - 1,
+            event::KeyCode::Home => self.cursor_x = 0,
+            event::KeyCode::End => self.cursor_x = self.screen_cols - 1,
             _ => {}
         }
 
