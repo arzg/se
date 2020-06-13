@@ -74,11 +74,19 @@ impl Editor {
         }
 
         match code {
-            event::KeyCode::Left => self.cursor_x -= 1,
+            event::KeyCode::Left => self.cursor_x = self.cursor_x.saturating_sub(1),
             event::KeyCode::Right => self.cursor_x += 1,
-            event::KeyCode::Up => self.cursor_y -= 1,
+            event::KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
             event::KeyCode::Down => self.cursor_y += 1,
             _ => {}
+        }
+
+        if self.cursor_x + 1 > self.screen_cols {
+            self.cursor_x = self.screen_cols - 1;
+        }
+
+        if self.cursor_y + 1 > self.screen_rows {
+            self.cursor_y = self.screen_rows - 1;
         }
 
         ControlFlow::Continue
