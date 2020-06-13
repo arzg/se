@@ -73,14 +73,12 @@ impl Editor {
             return ControlFlow::Break;
         }
 
-        if let event::KeyCode::Char(c) = code {
-            match c {
-                'a' => self.cursor_x -= 1,
-                'd' => self.cursor_x += 1,
-                'w' => self.cursor_y -= 1,
-                's' => self.cursor_y += 1,
-                _ => {}
-            }
+        match code {
+            event::KeyCode::Left => self.cursor_x -= 1,
+            event::KeyCode::Right => self.cursor_x += 1,
+            event::KeyCode::Up => self.cursor_y -= 1,
+            event::KeyCode::Down => self.cursor_y += 1,
+            _ => {}
         }
 
         ControlFlow::Continue
