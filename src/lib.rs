@@ -3,6 +3,8 @@
 use crossterm::{cursor, event, queue, terminal};
 use std::io::{self, Write};
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub struct Editor {
     screen_rows: u16,
     screen_cols: u16,
@@ -32,7 +34,11 @@ impl Editor {
         let is_on_last_row = |i| i == self.screen_rows - 1;
 
         for i in 0..self.screen_rows {
-            write!(stdout, "~")?;
+            if i == self.screen_rows / 3 {
+                write!(stdout, "se v{} · A screen editor.", VERSION)?;
+            } else {
+                write!(stdout, "~")?;
+            }
 
             queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
 
