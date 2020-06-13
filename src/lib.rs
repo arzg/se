@@ -1,11 +1,15 @@
 #![warn(rust_2018_idioms)]
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
-use crossterm::{execute, terminal};
+use crossterm::{cursor, execute, terminal};
 use std::io::{self, Write};
 
 pub fn refresh_screen(stdout: &mut io::Stdout) -> anyhow::Result<()> {
-    execute!(stdout, terminal::Clear(terminal::ClearType::All))?;
+    execute!(
+        stdout,
+        terminal::Clear(terminal::ClearType::All),
+        cursor::MoveTo(0, 0)
+    )?;
 
     Ok(())
 }
