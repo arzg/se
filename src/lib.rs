@@ -1,9 +1,10 @@
 #![warn(rust_2018_idioms)]
 
 use crossterm::{cursor, event, queue, terminal};
+use std::convert::TryFrom;
 use std::io::{self, Write};
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
 
 pub struct Editor {
     screen_rows: u16,
@@ -35,7 +36,12 @@ impl Editor {
 
         for i in 0..self.screen_rows {
             if i == self.screen_rows / 3 {
-                write!(stdout, "se v{} · A screen editor.", VERSION)?;
+                let padding_len =
+                    (usize::try_from(self.screen_cols).unwrap() - WELCOME_MSG.len()) / 2;
+
+                let padding = " ".repeat(padding_len);
+
+                write!(stdout, "{}{}", padding, WELCOME_MSG)?;
             } else {
                 write!(stdout, "~")?;
             }
