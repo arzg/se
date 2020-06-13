@@ -66,14 +66,24 @@ impl Editor {
         Ok(())
     }
 
-    pub fn process_keypress(&self, key_event: event::KeyEvent) -> ControlFlow {
+    pub fn process_keypress(&mut self, key_event: event::KeyEvent) -> ControlFlow {
         let event::KeyEvent { code, modifiers } = key_event;
 
         if code == event::KeyCode::Char('q') && modifiers == event::KeyModifiers::CONTROL {
-            ControlFlow::Break
-        } else {
-            ControlFlow::Continue
+            return ControlFlow::Break;
         }
+
+        if let event::KeyCode::Char(c) = code {
+            match c {
+                'a' => self.cursor_x -= 1,
+                'd' => self.cursor_x += 1,
+                'w' => self.cursor_y -= 1,
+                's' => self.cursor_y += 1,
+                _ => {}
+            }
+        }
+
+        ControlFlow::Continue
     }
 }
 

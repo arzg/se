@@ -23,17 +23,17 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn run(stdout: &mut io::Stdout) -> anyhow::Result<()> {
-    let editor = se::Editor::new()?;
+    let mut editor = se::Editor::new()?;
 
     editor.refresh_screen(stdout)?;
 
     loop {
         if let Event::Key(key_event) = event::read()? {
-            editor.refresh_screen(stdout)?;
-
             if let se::ControlFlow::Break = editor.process_keypress(key_event) {
                 break;
             }
+
+            editor.refresh_screen(stdout)?;
         }
     }
 
