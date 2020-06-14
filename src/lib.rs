@@ -1,7 +1,7 @@
 #![warn(rust_2018_idioms)]
 
 use crossterm::{cursor, event, queue, terminal};
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::io::{self, Write};
 
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
@@ -11,6 +11,7 @@ pub struct Editor {
     cursor_y: u16,
     screen_rows: u16,
     screen_cols: u16,
+    line: String,
 }
 
 impl Editor {
@@ -22,6 +23,7 @@ impl Editor {
             cursor_y: 0,
             screen_rows,
             screen_cols,
+            line: "Hello, world!".to_string(),
         })
     }
 
@@ -42,25 +44,40 @@ impl Editor {
     }
 
     fn draw_rows(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+        for i in 0..self.screen_rows {
+            if i == 0 {
+                let line = if self.line.len() > self.screen_cols.try_into().unwrap() {
+                    &self.line[0..usize::try_from(self.screen_cols).unwrap() + 1]
+                } else {
+                    &self.line
+                };
+
+                writeln!(stdout, "{}\r", line)?;
+            } else {
+                self.draw_empty_row(stdout, i)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn draw_empty_row(&self, stdout: &mut io::Stdout, i: u16) -> anyhow::Result<()> {
         let is_on_last_row = |i| i == self.screen_rows - 1;
 
-        for i in 0..self.screen_rows {
-            write!(stdout, "~")?;
+        write!(stdout, "~")?;
 
-            if i == self.screen_rows / 3 {
-                let padding_len =
-                    (usize::try_from(self.screen_cols).unwrap() - WELCOME_MSG.len()) / 2;
+        if i == self.screen_rows / 3 {
+            let padding_len = (usize::try_from(self.screen_cols).unwrap() - WELCOME_MSG.len()) / 2;
 
-                let padding = " ".repeat(padding_len);
+            let padding = " ".repeat(padding_len);
 
-                write!(stdout, "{}{}", padding, WELCOME_MSG)?;
-            }
+            write!(stdout, "{}{}", padding, WELCOME_MSG)?;
+        }
 
-            queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+        queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
 
-            if !is_on_last_row(i) {
-                writeln!(stdout, "\r")?;
-            }
+        if !is_on_last_row(i) {
+            writeln!(stdout, "\r")?;
         }
 
         Ok(())
