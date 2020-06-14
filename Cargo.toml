@@ -12,3 +12,4 @@ repository = "https://github.com/arzg/se"
 [dependencies]
 anyhow = "1"
 crossterm = "0.17"
+structopt = "0.3"

@@ -2,7 +2,9 @@
 
 use crossterm::{cursor, event, queue, terminal};
 use std::convert::TryInto;
+use std::fs;
 use std::io::{self, Write};
+use std::path::Path;
 
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
 
@@ -11,19 +13,28 @@ pub struct Editor {
     cursor_y: usize,
     screen_rows: usize,
     screen_cols: usize,
-    line: String,
+    buffer: Vec<String>,
 }
 
 impl Editor {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn open(path: Option<impl AsRef<Path>>) -> anyhow::Result<Self> {
         let (cols, rows) = terminal::size()?;
+
+        let buffer = if let Some(path) = path {
+            fs::read_to_string(path)?
+                .lines()
+                .map(String::from)
+                .collect()
+        } else {
+            Vec::new()
+        };
 
         Ok(Self {
             cursor_x: 0,
             cursor_y: 0,
             screen_rows: rows.try_into()?,
             screen_cols: cols.try_into()?,
-            line: "Hello, world!".to_string(),
+            buffer,
         })
     }
 
@@ -42,17 +53,25 @@ impl Editor {
     }
 
     fn draw_rows(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+        let is_on_last_row = |i| i == self.screen_rows - 1;
+
         for i in 0..self.screen_rows {
-            if i == 0 {
-                let line = if self.line.len() > self.screen_cols {
-                    &self.line[0..self.screen_cols + 1]
+            if let Some(line) = self.buffer.get(i) {
+                let line = if line.len() > self.screen_cols {
+                    &line[0..=self.screen_cols]
                 } else {
-                    &self.line
+                    &line
                 };
 
-                writeln!(stdout, "{}\r", line)?;
+                write!(stdout, "{}", line)?;
             } else {
                 self.draw_empty_row(stdout, i)?;
+            }
+
+            queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+
+            if !is_on_last_row(i) {
+                writeln!(stdout, "\r")?;
             }
         }
 
@@ -60,21 +79,14 @@ impl Editor {
     }
 
     fn draw_empty_row(&self, stdout: &mut io::Stdout, i: usize) -> anyhow::Result<()> {
-        let is_on_last_row = |i| i == self.screen_rows - 1;
-
         write!(stdout, "~")?;
 
-        if i == self.screen_rows / 3 {
+        // Only draw welcome message if the buffer is empty.
+        if self.buffer.is_empty() && i == self.screen_rows / 3 {
             let padding_len = (self.screen_cols - WELCOME_MSG.len()) / 2;
             let padding = " ".repeat(padding_len);
 
             write!(stdout, "{}{}", padding, WELCOME_MSG)?;
-        }
-
-        queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-
-        if !is_on_last_row(i) {
-            writeln!(stdout, "\r")?;
         }
 
         Ok(())
