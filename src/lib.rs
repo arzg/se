@@ -1,10 +1,10 @@
 #![warn(rust_2018_idioms)]
 
 use crossterm::{cursor, event, queue, terminal};
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::PathBuf;
 
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
 
@@ -16,13 +16,14 @@ pub struct Editor {
     row_offset: usize,
     col_offset: usize,
     buffer: Vec<String>,
+    path: Option<PathBuf>,
 }
 
 impl Editor {
-    pub fn open(path: Option<impl AsRef<Path>>) -> anyhow::Result<Self> {
+    pub fn open(path: Option<PathBuf>) -> anyhow::Result<Self> {
         let (cols, rows) = terminal::size()?;
 
-        let buffer = if let Some(path) = path {
+        let buffer = if let Some(ref path) = path {
             fs::read_to_string(path)?
                 .lines()
                 .map(String::from)
@@ -34,11 +35,13 @@ impl Editor {
         Ok(Self {
             cursor_x: 0,
             cursor_y: 0,
-            screen_rows: rows.try_into()?,
-            screen_cols: cols.try_into()?,
+            // Decrement because the last line is used for the status bar.
+            screen_rows: usize::try_from(rows)? - 1,
+            screen_cols: usize::try_from(cols)?,
             row_offset: 0,
             col_offset: 0,
             buffer,
+            path,
         })
     }
 
@@ -46,6 +49,7 @@ impl Editor {
         queue!(stdout, cursor::Hide, cursor::MoveTo(0, 0))?;
 
         self.draw_rows(stdout)?;
+        self.draw_status_bar(stdout)?;
 
         let screen_cursor_x: u16 = (self.cursor_x - self.col_offset).try_into()?;
         let screen_cursor_y: u16 = (self.cursor_y - self.row_offset).try_into()?;
@@ -61,8 +65,6 @@ impl Editor {
     }
 
     fn draw_rows(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
-        let is_on_last_row = |i| i == self.screen_rows - 1;
-
         for i in 0..self.screen_rows {
             if let Some(line) = self.buffer.get(i + self.row_offset) {
                 let line_len = line.len();
@@ -83,10 +85,7 @@ impl Editor {
             }
 
             queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-
-            if !is_on_last_row(i) {
-                writeln!(stdout, "\r")?;
-            }
+            writeln!(stdout, "\r")?;
         }
 
         Ok(())
@@ -102,6 +101,50 @@ impl Editor {
 
             write!(stdout, "{}{}", padding, WELCOME_MSG)?;
         }
+
+        Ok(())
+    }
+
+    fn draw_status_bar(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+        use ansi_term::Style;
+        use std::borrow::Cow;
+
+        let filename = if let Some(ref path) = self.path {
+            path.to_string_lossy()
+        } else {
+            Cow::Borrowed("[No Name]")
+        };
+        let line_count = format!("{} lines", self.buffer.len());
+        let left_status_bar = format!("{} - {}", filename, line_count);
+
+        let right_status_bar = format!("{}/{}", self.cursor_y + 1, self.buffer.len());
+
+        // Require at least one character of padding between the left and right sides of the status
+        // bar.
+        const MIN_PADDING: usize = 1;
+
+        let min_width_with_right = left_status_bar.len() + right_status_bar.len();
+        let min_width_without_right = left_status_bar.len();
+
+        let status_bar = if self.screen_cols >= min_width_with_right + MIN_PADDING {
+            format!(
+                "{}{}{}",
+                left_status_bar,
+                " ".repeat(self.screen_cols - min_width_with_right),
+                right_status_bar
+            )
+        } else if self.screen_cols >= min_width_without_right {
+            format!(
+                "{}{}",
+                left_status_bar,
+                " ".repeat(self.screen_cols - min_width_without_right),
+            )
+        } else {
+            " ".repeat(self.screen_cols)
+        };
+
+        let reverse = Style::new().reverse();
+        write!(stdout, "{}", reverse.paint(status_bar))?;
 
         Ok(())
     }
