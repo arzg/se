@@ -13,6 +13,8 @@ pub struct Editor {
     cursor_y: usize,
     screen_rows: usize,
     screen_cols: usize,
+    row_offset: usize,
+    col_offset: usize,
     buffer: Vec<String>,
 }
 
@@ -34,6 +36,8 @@ impl Editor {
             cursor_y: 0,
             screen_rows: rows.try_into()?,
             screen_cols: cols.try_into()?,
+            row_offset: 0,
+            col_offset: 0,
             buffer,
         })
     }
@@ -43,9 +47,13 @@ impl Editor {
 
         self.draw_rows(stdout)?;
 
-        let cursor_x: u16 = self.cursor_x.try_into()?;
-        let cursor_y: u16 = self.cursor_y.try_into()?;
-        queue!(stdout, cursor::MoveTo(cursor_x, cursor_y), cursor::Show)?;
+        let screen_cursor_x: u16 = (self.cursor_x - self.col_offset).try_into()?;
+        let screen_cursor_y: u16 = (self.cursor_y - self.row_offset).try_into()?;
+        queue!(
+            stdout,
+            cursor::MoveTo(screen_cursor_x, screen_cursor_y),
+            cursor::Show
+        )?;
 
         stdout.flush()?;
 
@@ -56,11 +64,17 @@ impl Editor {
         let is_on_last_row = |i| i == self.screen_rows - 1;
 
         for i in 0..self.screen_rows {
-            if let Some(line) = self.buffer.get(i) {
-                let line = if line.len() > self.screen_cols {
-                    &line[0..=self.screen_cols]
-                } else {
-                    &line
+            if let Some(line) = self.buffer.get(i + self.row_offset) {
+                let line_len = line.len();
+                let reaches_to_left_of_screen = line_len > self.col_offset;
+                let reaches_to_right_of_screen = line_len >= self.col_offset + self.screen_cols;
+
+                let line = match (reaches_to_left_of_screen, reaches_to_right_of_screen) {
+                    // If a line reaches to the right of the screen it must also reach the left of
+                    // the screen.
+                    (_, true) => &line[self.col_offset..self.col_offset + self.screen_cols],
+                    (true, _) => &line[self.col_offset..],
+                    _ => "",
                 };
 
                 write!(stdout, "{}", line)?;
@@ -111,15 +125,37 @@ impl Editor {
             _ => {}
         }
 
-        if self.cursor_x + 1 > self.screen_cols {
-            self.cursor_x = self.screen_cols - 1;
+        let num_lines = self.buffer.len();
+        if self.cursor_y + 1 > num_lines {
+            self.cursor_y = num_lines.saturating_sub(1);
         }
 
-        if self.cursor_y + 1 > self.screen_rows {
-            self.cursor_y = self.screen_rows - 1;
+        let num_chars = self.buffer.get(self.cursor_y).map(String::len).unwrap_or(0);
+        if self.cursor_x + 1 > num_chars {
+            self.cursor_x = num_chars.saturating_sub(1);
         }
+
+        self.scroll();
 
         ControlFlow::Continue
+    }
+
+    fn scroll(&mut self) {
+        if self.cursor_y < self.row_offset {
+            self.row_offset = self.cursor_y;
+        }
+
+        if self.cursor_y >= self.row_offset + self.screen_rows {
+            self.row_offset = self.cursor_y - self.screen_rows + 1;
+        }
+
+        if self.cursor_x < self.col_offset {
+            self.col_offset = self.cursor_x;
+        }
+
+        if self.cursor_x >= self.col_offset + self.screen_cols {
+            self.col_offset = self.cursor_x - self.screen_cols + 1;
+        }
     }
 }
 
