@@ -125,6 +125,13 @@ impl Editor {
             _ => {}
         }
 
+        self.limit_cursor_pos_to_buffer_contents();
+        self.scroll();
+
+        ControlFlow::Continue
+    }
+
+    fn limit_cursor_pos_to_buffer_contents(&mut self) {
         let num_lines = self.buffer.len();
         if self.cursor_y + 1 > num_lines {
             self.cursor_y = num_lines.saturating_sub(1);
@@ -134,10 +141,6 @@ impl Editor {
         if self.cursor_x + 1 > num_chars {
             self.cursor_x = num_chars.saturating_sub(1);
         }
-
-        self.scroll();
-
-        ControlFlow::Continue
     }
 
     fn scroll(&mut self) {
