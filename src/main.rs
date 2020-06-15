@@ -1,5 +1,6 @@
 use crossterm::event::{self, Event};
 use crossterm::{cursor, execute, queue, terminal};
+use std::convert::TryInto;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -45,13 +46,17 @@ fn run(opts: Opts, stdout: &mut io::Stdout) -> anyhow::Result<()> {
     editor.refresh_screen(stdout)?;
 
     loop {
-        if let Event::Key(key_event) = event::read()? {
-            if let se::ControlFlow::Break = editor.process_keypress(key_event) {
-                break;
+        match event::read()? {
+            Event::Key(key_event) => {
+                if let se::ControlFlow::Break = editor.process_keypress(key_event) {
+                    break;
+                }
             }
-
-            editor.refresh_screen(stdout)?;
+            Event::Resize(cols, rows) => editor.resize(cols.try_into()?, rows.try_into()?),
+            _ => {}
         }
+
+        editor.refresh_screen(stdout)?;
     }
 
     Ok(())

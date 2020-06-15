@@ -7,6 +7,7 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
+const STATUS_BAR_HEIGHT: usize = 1;
 
 pub struct Editor {
     cursor_x: usize,
@@ -35,8 +36,7 @@ impl Editor {
         Ok(Self {
             cursor_x: 0,
             cursor_y: 0,
-            // Decrement because the last line is used for the status bar.
-            screen_rows: usize::try_from(rows)? - 1,
+            screen_rows: usize::try_from(rows)? - STATUS_BAR_HEIGHT,
             screen_cols: usize::try_from(cols)?,
             row_offset: 0,
             col_offset: 0,
@@ -202,6 +202,15 @@ impl Editor {
         if self.cursor_x >= self.col_offset + self.screen_cols {
             self.col_offset = self.cursor_x - self.screen_cols + 1;
         }
+    }
+
+    pub fn resize(&mut self, cols: usize, rows: usize) {
+        self.screen_cols = cols;
+        self.screen_rows = rows - STATUS_BAR_HEIGHT;
+
+        // We need to re-limit the cursor position to the file and to the screen to prevent the
+        // cursor from going offscreen.
+        self.scroll();
     }
 }
 
