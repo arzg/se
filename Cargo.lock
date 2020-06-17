@@ -315,6 +315,8 @@ dependencies = [
  "anyhow",
  "crossterm",
  "structopt",
+ "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

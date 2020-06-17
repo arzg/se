@@ -5,6 +5,8 @@ use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
 const STATUS_BAR_HEIGHT: usize = 1;
@@ -67,16 +69,30 @@ impl Editor {
     fn draw_rows(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
         for i in 0..self.screen_rows {
             if let Some(line) = self.buffer.get(i + self.row_offset) {
-                let line_len = line.len();
-                let reaches_to_left_of_screen = line_len > self.col_offset;
-                let reaches_to_right_of_screen = line_len >= self.col_offset + self.screen_cols;
+                let graphemes = line.graphemes(true);
+                let width = line.width();
+                let reaches_to_left_of_screen = width > self.col_offset;
+                let reaches_to_right_of_screen = width >= self.col_offset + self.screen_cols;
 
-                let line = match (reaches_to_left_of_screen, reaches_to_right_of_screen) {
+                let line: String = match (reaches_to_left_of_screen, reaches_to_right_of_screen) {
                     // If a line reaches to the right of the screen it must also reach the left of
                     // the screen.
-                    (_, true) => &line[self.col_offset..self.col_offset + self.screen_cols],
-                    (true, _) => &line[self.col_offset..],
-                    _ => "",
+                    (_, true) => {
+                        let mut line = String::with_capacity(self.screen_cols);
+
+                        // Keep adding graphemes to the line while they’re small enough to fit.
+                        for grapheme in graphemes.skip(self.col_offset) {
+                            if line.width() + grapheme.width() <= self.screen_cols {
+                                line.push_str(grapheme);
+                            } else {
+                                break;
+                            }
+                        }
+
+                        line
+                    }
+                    (true, _) => graphemes.skip(self.col_offset).collect(),
+                    _ => String::new(),
                 };
 
                 write!(stdout, "{}", line)?;
@@ -123,8 +139,8 @@ impl Editor {
         // bar.
         const MIN_PADDING: usize = 1;
 
-        let min_width_with_right = left_status_bar.len() + right_status_bar.len();
-        let min_width_without_right = left_status_bar.len();
+        let min_width_with_right = left_status_bar.width() + right_status_bar.width();
+        let min_width_without_right = left_status_bar.width();
 
         let status_bar = if self.screen_cols >= min_width_with_right + MIN_PADDING {
             format!(
@@ -180,9 +196,14 @@ impl Editor {
             self.cursor_y = num_lines.saturating_sub(1);
         }
 
-        let num_chars = self.buffer.get(self.cursor_y).map(String::len).unwrap_or(0);
-        if self.cursor_x + 1 > num_chars {
-            self.cursor_x = num_chars.saturating_sub(1);
+        let width = self
+            .buffer
+            .get(self.cursor_y)
+            .map(|line| line.width())
+            .unwrap_or(0);
+
+        if self.cursor_x + 1 > width {
+            self.cursor_x = width.saturating_sub(1);
         }
     }
 
