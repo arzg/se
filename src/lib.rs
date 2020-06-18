@@ -215,6 +215,7 @@ impl Editor {
             event::KeyCode::PageDown => self.cursor_y += self.editor_rows / 2,
             event::KeyCode::Home => self.cursor_x = 0,
             event::KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].len(),
+            event::KeyCode::Char(c) => self.insert_char(c),
             _ => {}
         }
 
@@ -257,6 +258,15 @@ impl Editor {
         if self.cursor_x >= self.col_offset + self.editor_cols {
             self.col_offset = self.cursor_x - self.editor_cols + 1;
         }
+    }
+
+    pub fn insert_char(&mut self, c: char) {
+        if self.cursor_y == self.buffer.len() {
+            self.buffer.push(String::new());
+        }
+
+        self.buffer[self.cursor_y].insert(self.cursor_x, c);
+        self.cursor_x += 1;
     }
 
     pub fn resize(&mut self, cols: usize, rows: usize) {
