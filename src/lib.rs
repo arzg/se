@@ -177,10 +177,12 @@ impl Editor {
             event::KeyCode::Right => self.cursor_x += 1,
             event::KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
             event::KeyCode::Down => self.cursor_y += 1,
-            event::KeyCode::PageUp => self.cursor_y = 0,
-            event::KeyCode::PageDown => self.cursor_y = self.screen_rows - 1,
+            event::KeyCode::PageUp => {
+                self.cursor_y = self.cursor_y.saturating_sub(self.screen_rows / 2)
+            }
+            event::KeyCode::PageDown => self.cursor_y += self.screen_rows / 2,
             event::KeyCode::Home => self.cursor_x = 0,
-            event::KeyCode::End => self.cursor_x = self.screen_cols - 1,
+            event::KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].len(),
             _ => {}
         }
 
