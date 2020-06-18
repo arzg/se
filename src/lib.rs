@@ -16,6 +16,8 @@ pub struct Editor {
     cursor_y: usize,
     screen_rows: usize,
     screen_cols: usize,
+    editor_rows: usize,
+    editor_cols: usize,
     row_offset: usize,
     col_offset: usize,
     buffer: Vec<String>,
@@ -42,8 +44,10 @@ impl Editor {
         Ok(Self {
             cursor_x: 0,
             cursor_y: 0,
-            screen_rows: screen_rows - STATUS_BAR_HEIGHT,
+            screen_rows,
             screen_cols,
+            editor_rows: screen_rows - STATUS_BAR_HEIGHT,
+            editor_cols: screen_cols,
             row_offset: 0,
             col_offset: 0,
             buffer,
@@ -81,22 +85,22 @@ impl Editor {
     }
 
     fn draw_rows(&self, writer: &mut impl Write) -> anyhow::Result<()> {
-        for i in 0..self.screen_rows {
+        for i in 0..self.editor_rows {
             if let Some(line) = self.buffer.get(i + self.row_offset) {
                 let graphemes = line.graphemes(true);
                 let width = line.width();
-                let reaches_to_left_of_screen = width > self.col_offset;
-                let reaches_to_right_of_screen = width >= self.col_offset + self.screen_cols;
+                let reaches_left_of_editor = width > self.col_offset;
+                let reaches_right_of_editor = width >= self.col_offset + self.editor_cols;
 
-                let line: String = match (reaches_to_left_of_screen, reaches_to_right_of_screen) {
+                let line: String = match (reaches_left_of_editor, reaches_right_of_editor) {
                     // If a line reaches to the right of the screen it must also reach the left of
                     // the screen.
                     (_, true) => {
-                        let mut line = String::with_capacity(self.screen_cols);
+                        let mut line = String::with_capacity(self.editor_cols);
 
                         // Keep adding graphemes to the line while they’re small enough to fit.
                         for grapheme in graphemes.skip(self.col_offset) {
-                            if line.width() + grapheme.width() <= self.screen_cols {
+                            if line.width() + grapheme.width() <= self.editor_cols {
                                 line.push_str(grapheme);
                             } else {
                                 break;
@@ -125,8 +129,8 @@ impl Editor {
         write!(writer, "~")?;
 
         // Only draw welcome message if the buffer is empty.
-        if self.buffer.is_empty() && i == self.screen_rows / 3 {
-            let padding_len = (self.screen_cols - WELCOME_MSG.len()) / 2;
+        if self.buffer.is_empty() && i == self.editor_rows / 3 {
+            let padding_len = (self.editor_cols - WELCOME_MSG.len()) / 2;
             let padding = " ".repeat(padding_len);
 
             write!(writer, "{}{}", padding, WELCOME_MSG)?;
@@ -192,9 +196,9 @@ impl Editor {
             event::KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
             event::KeyCode::Down => self.cursor_y += 1,
             event::KeyCode::PageUp => {
-                self.cursor_y = self.cursor_y.saturating_sub(self.screen_rows / 2)
+                self.cursor_y = self.cursor_y.saturating_sub(self.editor_rows / 2)
             }
-            event::KeyCode::PageDown => self.cursor_y += self.screen_rows / 2,
+            event::KeyCode::PageDown => self.cursor_y += self.editor_rows / 2,
             event::KeyCode::Home => self.cursor_x = 0,
             event::KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].len(),
             _ => {}
@@ -228,22 +232,24 @@ impl Editor {
             self.row_offset = self.cursor_y;
         }
 
-        if self.cursor_y >= self.row_offset + self.screen_rows {
-            self.row_offset = self.cursor_y - self.screen_rows + 1;
+        if self.cursor_y >= self.row_offset + self.editor_rows {
+            self.row_offset = self.cursor_y - self.editor_rows + 1;
         }
 
         if self.cursor_x < self.col_offset {
             self.col_offset = self.cursor_x;
         }
 
-        if self.cursor_x >= self.col_offset + self.screen_cols {
-            self.col_offset = self.cursor_x - self.screen_cols + 1;
+        if self.cursor_x >= self.col_offset + self.editor_cols {
+            self.col_offset = self.cursor_x - self.editor_cols + 1;
         }
     }
 
     pub fn resize(&mut self, cols: usize, rows: usize) {
         self.screen_cols = cols;
-        self.screen_rows = rows - STATUS_BAR_HEIGHT;
+        self.screen_rows = rows;
+        self.editor_cols = cols;
+        self.editor_rows = rows - STATUS_BAR_HEIGHT;
 
         // We need to re-limit the cursor position to the file and to the screen to prevent the
         // cursor from going offscreen.
