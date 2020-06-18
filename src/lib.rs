@@ -237,7 +237,7 @@ impl Editor {
             .unwrap_or(0);
 
         if self.cursor_x + 1 > width {
-            self.cursor_x = width.saturating_sub(1);
+            self.cursor_x = width;
         }
     }
 
