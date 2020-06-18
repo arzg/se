@@ -43,20 +43,27 @@ fn run(opts: Opts, stdout: &mut io::Stdout) -> anyhow::Result<()> {
 
     queue!(stdout, terminal::Clear(terminal::ClearType::All))?;
 
-    editor.refresh_screen(stdout)?;
+    editor.refresh_screen(stdout, se::Refresh::Full)?;
 
     loop {
-        match event::read()? {
+        let refresh = match event::read()? {
             Event::Key(key_event) => {
                 if let se::ControlFlow::Break = editor.process_keypress(key_event) {
                     break;
                 }
+                Some(se::Refresh::Partial)
             }
-            Event::Resize(cols, rows) => editor.resize(cols.try_into()?, rows.try_into()?),
-            _ => {}
-        }
+            // Fully refresh the screen if the window was resized.
+            Event::Resize(cols, rows) => {
+                editor.resize(cols.try_into()?, rows.try_into()?);
+                Some(se::Refresh::Full)
+            }
+            _ => None,
+        };
 
-        editor.refresh_screen(stdout)?;
+        if let Some(refresh) = refresh {
+            editor.refresh_screen(stdout, refresh)?;
+        }
     }
 
     Ok(())

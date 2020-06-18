@@ -20,11 +20,15 @@ pub struct Editor {
     col_offset: usize,
     buffer: Vec<String>,
     path: Option<PathBuf>,
+    renderer: Renderer,
 }
 
 impl Editor {
     pub fn open(path: Option<PathBuf>) -> anyhow::Result<Self> {
-        let (cols, rows) = terminal::size()?;
+        let (screen_cols, screen_rows) = terminal::size()?;
+
+        let screen_rows = usize::try_from(screen_rows)?;
+        let screen_cols = usize::try_from(screen_cols)?;
 
         let buffer = if let Some(ref path) = path {
             fs::read_to_string(path)?
@@ -38,20 +42,30 @@ impl Editor {
         Ok(Self {
             cursor_x: 0,
             cursor_y: 0,
-            screen_rows: usize::try_from(rows)? - STATUS_BAR_HEIGHT,
-            screen_cols: usize::try_from(cols)?,
+            screen_rows: screen_rows - STATUS_BAR_HEIGHT,
+            screen_cols,
             row_offset: 0,
             col_offset: 0,
             buffer,
             path,
+            renderer: Renderer::new(screen_rows),
         })
     }
 
-    pub fn refresh_screen(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+    pub fn refresh_screen(
+        &mut self,
+        stdout: &mut io::Stdout,
+        refresh: Refresh,
+    ) -> anyhow::Result<()> {
         queue!(stdout, cursor::Hide, cursor::MoveTo(0, 0))?;
 
-        self.draw_rows(stdout)?;
-        self.draw_status_bar(stdout)?;
+        let mut rendered = Vec::with_capacity(self.screen_cols * self.screen_rows);
+
+        self.draw_rows(&mut rendered)?;
+        self.draw_status_bar(&mut rendered)?;
+
+        self.renderer.update(rendered);
+        self.renderer.render(stdout, refresh)?;
 
         let screen_cursor_x: u16 = (self.cursor_x - self.col_offset).try_into()?;
         let screen_cursor_y: u16 = (self.cursor_y - self.row_offset).try_into()?;
@@ -66,7 +80,7 @@ impl Editor {
         Ok(())
     }
 
-    fn draw_rows(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+    fn draw_rows(&self, writer: &mut impl Write) -> anyhow::Result<()> {
         for i in 0..self.screen_rows {
             if let Some(line) = self.buffer.get(i + self.row_offset) {
                 let graphemes = line.graphemes(true);
@@ -95,33 +109,33 @@ impl Editor {
                     _ => String::new(),
                 };
 
-                write!(stdout, "{}", line)?;
+                write!(writer, "{}", line)?;
             } else {
-                self.draw_empty_row(stdout, i)?;
+                self.draw_empty_row(writer, i)?;
             }
 
-            queue!(stdout, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-            writeln!(stdout, "\r")?;
+            queue!(writer, terminal::Clear(terminal::ClearType::UntilNewLine))?;
+            writeln!(writer, "\r")?;
         }
 
         Ok(())
     }
 
-    fn draw_empty_row(&self, stdout: &mut io::Stdout, i: usize) -> anyhow::Result<()> {
-        write!(stdout, "~")?;
+    fn draw_empty_row(&self, writer: &mut impl Write, i: usize) -> anyhow::Result<()> {
+        write!(writer, "~")?;
 
         // Only draw welcome message if the buffer is empty.
         if self.buffer.is_empty() && i == self.screen_rows / 3 {
             let padding_len = (self.screen_cols - WELCOME_MSG.len()) / 2;
             let padding = " ".repeat(padding_len);
 
-            write!(stdout, "{}{}", padding, WELCOME_MSG)?;
+            write!(writer, "{}{}", padding, WELCOME_MSG)?;
         }
 
         Ok(())
     }
 
-    fn draw_status_bar(&self, stdout: &mut io::Stdout) -> anyhow::Result<()> {
+    fn draw_status_bar(&self, writer: &mut impl Write) -> anyhow::Result<()> {
         use ansi_term::Style;
         use std::borrow::Cow;
 
@@ -160,7 +174,7 @@ impl Editor {
         };
 
         let reverse = Style::new().reverse();
-        write!(stdout, "{}", reverse.paint(status_bar))?;
+        write!(writer, "{}", reverse.paint(status_bar))?;
 
         Ok(())
     }
@@ -237,7 +251,57 @@ impl Editor {
     }
 }
 
+#[derive(PartialEq)]
+pub enum Refresh {
+    Full,
+    Partial,
+}
+
+struct Renderer {
+    current: Vec<Vec<u8>>,
+    previous: Vec<Vec<u8>>,
+}
+
+impl Renderer {
+    fn new(lines: usize) -> Self {
+        Self {
+            current: vec![Vec::new(); lines],
+            previous: vec![Vec::new(); lines],
+        }
+    }
+
+    fn update(&mut self, new: Vec<u8>) {
+        let new: Vec<_> = new.split(|b| is_whitespace(*b)).map(Vec::from).collect();
+
+        debug_assert_eq!(self.current.len(), new.len());
+
+        self.previous = self.current.clone();
+        self.current = new;
+    }
+
+    fn render(&self, writer: &mut impl Write, refresh: Refresh) -> anyhow::Result<()> {
+        queue!(writer, cursor::Hide, cursor::MoveTo(0, 0))?;
+
+        for (i, (current_line, previous_line)) in
+            self.current.iter().zip(&self.previous).enumerate()
+        {
+            if refresh == Refresh::Full || current_line != previous_line {
+                let i = i.try_into()?;
+                queue!(writer, cursor::MoveTo(0, i))?;
+
+                writer.write_all(current_line)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 pub enum ControlFlow {
     Continue,
     Break,
+}
+
+fn is_whitespace(byte: u8) -> bool {
+    byte == b'\n'
 }
