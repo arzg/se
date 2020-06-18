@@ -40,6 +40,7 @@ fn main() -> anyhow::Result<()> {
 
 fn run(opts: Opts, stdout: &mut io::Stdout) -> anyhow::Result<()> {
     let mut editor = se::Editor::open(opts.path)?;
+    editor.set_status_msg("HELP: Ctrl-Q = quit".to_string());
 
     queue!(stdout, terminal::Clear(terminal::ClearType::All))?;
 

@@ -5,11 +5,14 @@ use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::time::{Duration, SystemTime};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
 const STATUS_BAR_HEIGHT: usize = 1;
+const STATUS_MSG_HEIGHT: usize = 1;
+const STATUS_MSG_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub struct Editor {
     cursor_x: usize,
@@ -22,6 +25,7 @@ pub struct Editor {
     col_offset: usize,
     buffer: Vec<String>,
     path: Option<PathBuf>,
+    status_msg: Option<StatusMsg>,
     renderer: Renderer,
 }
 
@@ -31,6 +35,9 @@ impl Editor {
 
         let screen_rows = usize::try_from(screen_rows)?;
         let screen_cols = usize::try_from(screen_cols)?;
+
+        let (editor_cols, editor_rows) =
+            convert_screen_dimens_to_editor_dimens(screen_cols, screen_rows);
 
         let buffer = if let Some(ref path) = path {
             fs::read_to_string(path)?
@@ -46,12 +53,13 @@ impl Editor {
             cursor_y: 0,
             screen_rows,
             screen_cols,
-            editor_rows: screen_rows - STATUS_BAR_HEIGHT,
-            editor_cols: screen_cols,
+            editor_rows,
+            editor_cols,
             row_offset: 0,
             col_offset: 0,
             buffer,
             path,
+            status_msg: None,
             renderer: Renderer::new(screen_rows),
         })
     }
@@ -67,6 +75,7 @@ impl Editor {
 
         self.draw_rows(&mut rendered)?;
         self.draw_status_bar(&mut rendered)?;
+        self.draw_status_msg(&mut rendered)?;
 
         self.renderer.update(rendered);
         self.renderer.render(stdout, refresh)?;
@@ -90,27 +99,11 @@ impl Editor {
                 let graphemes = line.graphemes(true);
                 let width = line.width();
                 let reaches_left_of_editor = width > self.col_offset;
-                let reaches_right_of_editor = width >= self.col_offset + self.editor_cols;
 
-                let line: String = match (reaches_left_of_editor, reaches_right_of_editor) {
-                    // If a line reaches to the right of the screen it must also reach the left of
-                    // the screen.
-                    (_, true) => {
-                        let mut line = String::with_capacity(self.editor_cols);
-
-                        // Keep adding graphemes to the line while they’re small enough to fit.
-                        for grapheme in graphemes.skip(self.col_offset) {
-                            if line.width() + grapheme.width() <= self.editor_cols {
-                                line.push_str(grapheme);
-                            } else {
-                                break;
-                            }
-                        }
-
-                        line
-                    }
-                    (true, _) => graphemes.skip(self.col_offset).collect(),
-                    _ => String::new(),
+                let line: String = if reaches_left_of_editor {
+                    slice_graphemes(graphemes.skip(self.col_offset), self.editor_cols)
+                } else {
+                    String::new()
                 };
 
                 write!(writer, "{}", line)?;
@@ -119,7 +112,7 @@ impl Editor {
             }
 
             queue!(writer, terminal::Clear(terminal::ClearType::UntilNewLine))?;
-            writeln!(writer, "\r")?;
+            writeln!(writer)?;
         }
 
         Ok(())
@@ -178,7 +171,28 @@ impl Editor {
         };
 
         let reverse = Style::new().reverse();
-        write!(writer, "{}", reverse.paint(status_bar))?;
+        writeln!(writer, "{}", reverse.paint(status_bar))?;
+
+        Ok(())
+    }
+
+    fn draw_status_msg(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+        let status_msg = if let Some(ref status_msg) = self.status_msg {
+            if status_msg.timestamp.elapsed()? < STATUS_MSG_TIMEOUT {
+                Some(status_msg)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        if let Some(status_msg) = status_msg {
+            let graphemes = status_msg.text.graphemes(true);
+            write!(writer, "{}", slice_graphemes(graphemes, self.screen_cols))?;
+        } else {
+            queue!(writer, terminal::Clear(terminal::ClearType::CurrentLine))?;
+        }
 
         Ok(())
     }
@@ -248,12 +262,22 @@ impl Editor {
     pub fn resize(&mut self, cols: usize, rows: usize) {
         self.screen_cols = cols;
         self.screen_rows = rows;
-        self.editor_cols = cols;
-        self.editor_rows = rows - STATUS_BAR_HEIGHT;
+
+        let (editor_cols, editor_rows) =
+            convert_screen_dimens_to_editor_dimens(self.screen_cols, self.screen_rows);
+        self.editor_cols = editor_cols;
+        self.editor_rows = editor_rows;
 
         // We need to re-limit the cursor position to the file and to the screen to prevent the
         // cursor from going offscreen.
         self.scroll();
+    }
+
+    pub fn set_status_msg(&mut self, msg: String) {
+        self.status_msg = Some(StatusMsg {
+            text: msg,
+            timestamp: SystemTime::now(),
+        });
     }
 }
 
@@ -261,6 +285,11 @@ impl Editor {
 pub enum Refresh {
     Full,
     Partial,
+}
+
+struct StatusMsg {
+    text: String,
+    timestamp: SystemTime,
 }
 
 struct Renderer {
@@ -306,6 +335,31 @@ impl Renderer {
 pub enum ControlFlow {
     Continue,
     Break,
+}
+
+fn slice_graphemes<'a>(graphemes: impl Iterator<Item = &'a str>, max_width: usize) -> String {
+    let mut output = String::with_capacity(max_width);
+
+    // Keep adding graphemes to the output while they’re small enough to fit.
+    for grapheme in graphemes {
+        if output.width() + grapheme.width() <= max_width {
+            output.push_str(grapheme);
+        } else {
+            break;
+        }
+    }
+
+    output
+}
+
+fn convert_screen_dimens_to_editor_dimens(
+    screen_cols: usize,
+    screen_rows: usize,
+) -> (usize, usize) {
+    (
+        screen_cols,
+        screen_rows - STATUS_BAR_HEIGHT - STATUS_MSG_HEIGHT,
+    )
 }
 
 fn is_whitespace(byte: u8) -> bool {
