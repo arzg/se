@@ -205,24 +205,32 @@ impl Editor {
     }
 
     pub fn process_keypress(&mut self, key_event: event::KeyEvent) -> ControlFlow {
-        let event::KeyEvent { code, modifiers } = key_event;
-
-        if code == event::KeyCode::Char('q') && modifiers == event::KeyModifiers::CONTROL {
+        match key_event {
+            KeyEvent {
+                code: KeyCode::Char('q'),
+                modifiers: KeyModifiers::CONTROL,
+            } => {
             return ControlFlow::Break;
         }
 
-        match code {
-            event::KeyCode::Left => self.cursor_x = self.cursor_x.saturating_sub(1),
-            event::KeyCode::Right => self.cursor_x += 1,
-            event::KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
-            event::KeyCode::Down => self.cursor_y += 1,
-            event::KeyCode::PageUp => {
+            KeyEvent {
+                code,
+                modifiers: KeyModifiers::NONE,
+            } => match code {
+                KeyCode::Left => self.cursor_x = self.cursor_x.saturating_sub(1),
+                KeyCode::Right => self.cursor_x += 1,
+                KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
+                KeyCode::Down => self.cursor_y += 1,
+                KeyCode::PageUp => {
                 self.cursor_y = self.cursor_y.saturating_sub(self.editor_rows / 2)
             }
-            event::KeyCode::PageDown => self.cursor_y += self.editor_rows / 2,
-            event::KeyCode::Home => self.cursor_x = 0,
-            event::KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].len(),
-            event::KeyCode::Char(c) => self.insert_char(c),
+                KeyCode::PageDown => self.cursor_y += self.editor_rows / 2,
+                KeyCode::Home => self.cursor_x = 0,
+                KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].len(),
+                KeyCode::Char(c) => self.insert_char(c),
+                _ => {}
+            },
+
             _ => {}
         }
 
