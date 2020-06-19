@@ -210,16 +210,12 @@ impl Editor {
             KeyEvent {
                 code: KeyCode::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
-            } => {
-                return Ok(ControlFlow::Break);
-            }
+            } => return Ok(ControlFlow::Break),
 
             KeyEvent {
                 code: KeyCode::Char('s'),
                 modifiers: KeyModifiers::CONTROL,
-            } => {
-                self.save()?;
-            }
+            } => self.save(),
 
             KeyEvent {
                 code,
@@ -309,22 +305,28 @@ impl Editor {
         });
     }
 
-    pub fn save(&mut self) -> anyhow::Result<()> {
+    pub fn save(&mut self) {
         if let Some(ref path) = self.path {
-            let file_contents = {
-                let mut s = self.buffer.join("\n");
-                s.push_str("\n"); // Always add trailing newline.
-                s
+            let save = || -> anyhow::Result<usize> {
+                let file_contents = {
+                    let mut s = self.buffer.join("\n");
+                    s.push_str("\n"); // Always add trailing newline.
+                    s
+                };
+
+                fs::write(path, &file_contents)?;
+
+                Ok(file_contents.len())
             };
 
-            fs::write(path, &file_contents)?;
+            let status_msg = match save() {
+                Ok(num_bytes) => format!("Wrote {} bytes to {}", num_bytes, path.display()),
+                Err(e) => format!("Error while saving {}: {}", path.display(), e),
+            };
 
-            let status_msg = format!("Wrote {} bytes to {}", file_contents.len(), path.display());
             self.set_status_msg(status_msg);
-
-            Ok(())
         } else {
-            anyhow::bail!("no path was specified");
+            self.set_status_msg("This buffer does not have a path to save at".to_string());
         }
     }
 
