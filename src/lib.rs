@@ -45,7 +45,7 @@ impl Editor {
                 .map(String::from)
                 .collect()
         } else {
-            Vec::new()
+            vec![String::new()]
         };
 
         Ok(Self {
