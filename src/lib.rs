@@ -1,6 +1,7 @@
 #![warn(rust_2018_idioms)]
 
-use crossterm::{cursor, event, queue, terminal};
+use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::{cursor, queue, terminal};
 use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
@@ -204,14 +205,21 @@ impl Editor {
         Ok(())
     }
 
-    pub fn process_keypress(&mut self, key_event: event::KeyEvent) -> ControlFlow {
+    pub fn process_keypress(&mut self, key_event: event::KeyEvent) -> anyhow::Result<ControlFlow> {
         match key_event {
             KeyEvent {
                 code: KeyCode::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
             } => {
-            return ControlFlow::Break;
-        }
+                return Ok(ControlFlow::Break);
+            }
+
+            KeyEvent {
+                code: KeyCode::Char('s'),
+                modifiers: KeyModifiers::CONTROL,
+            } => {
+                self.save()?;
+            }
 
             KeyEvent {
                 code,
@@ -222,8 +230,8 @@ impl Editor {
                 KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
                 KeyCode::Down => self.cursor_y += 1,
                 KeyCode::PageUp => {
-                self.cursor_y = self.cursor_y.saturating_sub(self.editor_rows / 2)
-            }
+                    self.cursor_y = self.cursor_y.saturating_sub(self.editor_rows / 2)
+                }
                 KeyCode::PageDown => self.cursor_y += self.editor_rows / 2,
                 KeyCode::Home => self.cursor_x = 0,
                 KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].len(),
@@ -237,7 +245,7 @@ impl Editor {
         self.limit_cursor_pos_to_buffer_contents();
         self.scroll();
 
-        ControlFlow::Continue
+        Ok(ControlFlow::Continue)
     }
 
     fn limit_cursor_pos_to_buffer_contents(&mut self) {
@@ -299,6 +307,25 @@ impl Editor {
             text: msg,
             timestamp: SystemTime::now(),
         });
+    }
+
+    pub fn save(&mut self) -> anyhow::Result<()> {
+        if let Some(ref path) = self.path {
+            let file_contents = {
+                let mut s = self.buffer.join("\n");
+                s.push_str("\n"); // Always add trailing newline.
+                s
+            };
+
+            fs::write(path, &file_contents)?;
+
+            let status_msg = format!("Wrote {} bytes to {}", file_contents.len(), path.display());
+            self.set_status_msg(status_msg);
+
+            Ok(())
+        } else {
+            anyhow::bail!("no path was specified");
+        }
     }
 
     fn cursor_x_byte_pos(&self) -> usize {
