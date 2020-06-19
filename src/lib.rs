@@ -288,7 +288,7 @@ impl Editor {
         }
     }
 
-    pub fn insert_char(&mut self, c: char) {
+    fn insert_char(&mut self, c: char) {
         if self.cursor_y == self.buffer.len() {
             self.buffer.push(String::new());
         }
@@ -319,7 +319,7 @@ impl Editor {
         });
     }
 
-    pub fn save(&mut self) {
+    fn save(&mut self) {
         if let Some(ref path) = self.path {
             let save = || -> anyhow::Result<usize> {
                 let file_contents = {
