@@ -80,8 +80,15 @@ impl Editor {
         self.renderer.update(rendered);
         self.renderer.render(stdout, refresh)?;
 
-        let screen_cursor_x: u16 = (self.cursor_x - self.col_offset).try_into()?;
+        let graphemes = self.buffer[self.cursor_y].graphemes(true);
+        let graphemes_from_offset_to_cursor = graphemes.take(self.cursor_x).skip(self.col_offset);
+
+        let screen_cursor_x: u16 = graphemes_from_offset_to_cursor
+            .collect::<String>()
+            .width()
+            .try_into()?;
         let screen_cursor_y: u16 = (self.cursor_y - self.row_offset).try_into()?;
+
         queue!(
             stdout,
             cursor::MoveTo(screen_cursor_x, screen_cursor_y),
@@ -231,14 +238,9 @@ impl Editor {
             self.cursor_y = num_lines.saturating_sub(1);
         }
 
-        let width = self
-            .buffer
-            .get(self.cursor_y)
-            .map(|line| line.width())
-            .unwrap_or(0);
-
-        if self.cursor_x + 1 > width {
-            self.cursor_x = width;
+        let num_graphemes = self.buffer[self.cursor_y].graphemes(true).count();
+        if self.cursor_x + 1 > num_graphemes {
+            self.cursor_x = num_graphemes;
         }
     }
 
@@ -265,8 +267,9 @@ impl Editor {
             self.buffer.push(String::new());
         }
 
-        self.buffer[self.cursor_y].insert(self.cursor_x, c);
-        self.cursor_x += 1;
+        let cursor_x_byte_pos = self.cursor_x_byte_pos();
+        self.buffer[self.cursor_y].insert(cursor_x_byte_pos, c);
+        self.cursor_x += 1; // A char can only be one grapheme
     }
 
     pub fn resize(&mut self, cols: usize, rows: usize) {
@@ -288,6 +291,11 @@ impl Editor {
             text: msg,
             timestamp: SystemTime::now(),
         });
+    }
+
+    fn cursor_x_byte_pos(&self) -> usize {
+        let graphemes = self.buffer[self.cursor_y].graphemes(true);
+        graphemes.take(self.cursor_x).collect::<String>().len()
     }
 }
 
