@@ -2,6 +2,7 @@
 
 use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::{cursor, queue, terminal};
+use sha1::Digest;
 use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
@@ -28,6 +29,7 @@ pub struct Editor {
     path: Option<PathBuf>,
     status_msg: Option<StatusMsg>,
     renderer: Renderer,
+    initial_hash: Vec<u8>,
 }
 
 impl Editor {
@@ -49,6 +51,8 @@ impl Editor {
             vec![String::new()]
         };
 
+        let initial_hash = sha1::Sha1::digest(buffer.join("").as_bytes()).to_vec();
+
         Ok(Self {
             cursor_x: 0,
             cursor_y: 0,
@@ -62,6 +66,7 @@ impl Editor {
             path,
             status_msg: None,
             renderer: Renderer::new(screen_rows),
+            initial_hash,
         })
     }
 
@@ -150,7 +155,8 @@ impl Editor {
             Cow::Borrowed("[No Name]")
         };
         let line_count = format!("{} lines", self.buffer.len());
-        let left_status_bar = format!("{} - {}", filename, line_count);
+        let modified_flag = if self.is_modified() { "[modified]" } else { "" };
+        let left_status_bar = format!("{} - {} {}", filename, line_count, modified_flag);
 
         let right_status_bar = format!("{}/{}", self.cursor_y + 1, self.buffer.len());
 
@@ -182,6 +188,14 @@ impl Editor {
         writeln!(writer, "{}", reverse.paint(status_bar))?;
 
         Ok(())
+    }
+
+    fn is_modified(&self) -> bool {
+        let current_hash = sha1::Sha1::digest(self.buffer.join("").as_bytes())
+            .as_slice()
+            .to_vec();
+
+        self.initial_hash != current_hash
     }
 
     fn draw_status_msg(&self, writer: &mut impl Write) -> anyhow::Result<()> {
