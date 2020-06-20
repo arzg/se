@@ -30,6 +30,7 @@ pub struct Editor {
     status_msg: Option<StatusMsg>,
     renderer: Renderer,
     initial_hash: Vec<u8>,
+    is_modified: bool,
 }
 
 impl Editor {
@@ -67,6 +68,7 @@ impl Editor {
             status_msg: None,
             renderer: Renderer::new(screen_rows),
             initial_hash,
+            is_modified: false,
         })
     }
 
@@ -155,7 +157,7 @@ impl Editor {
             Cow::Borrowed("[No Name]")
         };
         let line_count = format!("{} lines", self.buffer.len());
-        let modified_flag = if self.is_modified() { "[modified]" } else { "" };
+        let modified_flag = if self.is_modified { "[modified]" } else { "" };
         let left_status_bar = format!("{} - {} {}", filename, line_count, modified_flag);
 
         let right_status_bar = format!("{}/{}", self.cursor_y + 1, self.buffer.len());
@@ -188,14 +190,6 @@ impl Editor {
         writeln!(writer, "{}", reverse.paint(status_bar))?;
 
         Ok(())
-    }
-
-    fn is_modified(&self) -> bool {
-        let current_hash = sha1::Sha1::digest(self.buffer.join("").as_bytes())
-            .as_slice()
-            .to_vec();
-
-        self.initial_hash != current_hash
     }
 
     fn draw_status_msg(&self, writer: &mut impl Write) -> anyhow::Result<()> {
@@ -296,6 +290,16 @@ impl Editor {
         let cursor_x_byte_pos = self.cursor_x_byte_pos();
         self.buffer[self.cursor_y].insert(cursor_x_byte_pos, c);
         self.cursor_x += 1; // A char can only be one grapheme
+
+        self.update_modified_status();
+    }
+
+    fn update_modified_status(&mut self) {
+        let current_hash = sha1::Sha1::digest(self.buffer.join("").as_bytes())
+            .as_slice()
+            .to_vec();
+
+        self.is_modified = self.initial_hash != current_hash;
     }
 
     pub fn resize(&mut self, cols: usize, rows: usize) {
