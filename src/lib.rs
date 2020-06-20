@@ -508,7 +508,7 @@ fn convert_screen_dimens_to_editor_dimens(
 }
 
 fn compute_hash(buffer: &[String]) -> Vec<u8> {
-    sha1::Sha1::digest(buffer.join("").as_bytes()).to_vec()
+    sha1::Sha1::digest(buffer.join("\n").as_bytes()).to_vec()
 }
 
 fn is_whitespace(byte: u8) -> bool {
