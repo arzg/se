@@ -250,7 +250,7 @@ impl Editor {
                 }
                 KeyCode::PageDown => self.cursor_y += self.editor_rows / 2,
                 KeyCode::Home => self.cursor_x = 0,
-                KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].len(),
+                KeyCode::End => self.cursor_x = self.buffer[self.cursor_y].graphemes(true).count(),
                 KeyCode::Char(c) => self.insert_char(c),
                 _ => {}
             },
