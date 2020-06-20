@@ -245,6 +245,7 @@ impl Editor {
                 KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
                 KeyCode::Down => self.cursor_y += 1,
                 KeyCode::Backspace => self.backspace(),
+                KeyCode::Enter => self.enter(),
                 KeyCode::PageUp => {
                     self.cursor_y = self.cursor_y.saturating_sub(self.editor_rows / 2)
                 }
@@ -342,6 +343,20 @@ impl Editor {
 
             self.cursor_x -= 1;
         }
+
+        self.update_modified_status();
+    }
+
+    fn enter(&mut self) {
+        let graphemes = self.buffer[self.cursor_y].graphemes(true);
+        let line_before_cursor = graphemes.clone().take(self.cursor_x).collect();
+        let line_after_cursor = graphemes.skip(self.cursor_x).collect();
+
+        self.buffer[self.cursor_y] = line_before_cursor;
+        self.buffer.insert(self.cursor_y + 1, line_after_cursor);
+
+        self.cursor_y += 1;
+        self.cursor_x = 0;
 
         self.update_modified_status();
     }
