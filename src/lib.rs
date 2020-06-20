@@ -29,8 +29,9 @@ pub struct Editor {
     path: Option<PathBuf>,
     status_msg: Option<StatusMsg>,
     renderer: Renderer,
-    initial_hash: Vec<u8>,
+    unmodified_hash: Vec<u8>,
     is_modified: bool,
+    quit_without_saving: bool,
 }
 
 impl Editor {
@@ -52,7 +53,7 @@ impl Editor {
             vec![String::new()]
         };
 
-        let initial_hash = sha1::Sha1::digest(buffer.join("").as_bytes()).to_vec();
+        let initial_hash = compute_hash(&buffer);
 
         Ok(Self {
             cursor_x: 0,
@@ -67,8 +68,9 @@ impl Editor {
             path,
             status_msg: None,
             renderer: Renderer::new(screen_rows),
-            initial_hash,
+            unmodified_hash: initial_hash,
             is_modified: false,
+            quit_without_saving: false,
         })
     }
 
@@ -218,7 +220,16 @@ impl Editor {
             KeyEvent {
                 code: KeyCode::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
-            } => return Ok(ControlFlow::Break),
+            } => match (self.is_modified, self.quit_without_saving) {
+                (true, true) | (false, _) => return Ok(ControlFlow::Break),
+                (true, false) => {
+                    self.set_status_msg(
+                        "Buffer is modified! Press C-q again to quit without saving.".to_string(),
+                    );
+                    self.quit_without_saving = true;
+                    return Ok(ControlFlow::Continue);
+                }
+            },
 
             KeyEvent {
                 code: KeyCode::Char('s'),
@@ -245,6 +256,10 @@ impl Editor {
 
             _ => {}
         }
+
+        // If quit_without_saving is true and the user presses C-q, then it is handled above.
+        // Otherwise, it is not needed anymore and can be set back to false.
+        self.quit_without_saving = false;
 
         self.limit_cursor_pos_to_buffer_contents();
         self.scroll();
@@ -295,11 +310,8 @@ impl Editor {
     }
 
     fn update_modified_status(&mut self) {
-        let current_hash = sha1::Sha1::digest(self.buffer.join("").as_bytes())
-            .as_slice()
-            .to_vec();
-
-        self.is_modified = self.initial_hash != current_hash;
+        let current_hash = compute_hash(&self.buffer);
+        self.is_modified = self.unmodified_hash != current_hash;
     }
 
     pub fn resize(&mut self, cols: usize, rows: usize) {
@@ -337,12 +349,20 @@ impl Editor {
                 Ok(file_contents.len())
             };
 
-            let status_msg = match save() {
-                Ok(num_bytes) => format!("Wrote {} bytes to {}", num_bytes, path.display()),
-                Err(e) => format!("Error while saving {}: {}", path.display(), e),
-            };
+            match save() {
+                Ok(num_bytes) => {
+                    let status_msg = format!("Wrote {} bytes to {}", num_bytes, path.display());
+                    self.set_status_msg(status_msg);
 
-            self.set_status_msg(status_msg);
+                    // Update the hash modified comparisons are based upon.
+                    self.unmodified_hash = compute_hash(&self.buffer);
+                    self.is_modified = false;
+                }
+                Err(e) => {
+                    let status_msg = format!("Error while saving {}: {}", path.display(), e);
+                    self.set_status_msg(status_msg)
+                }
+            };
         } else {
             self.set_status_msg("This buffer does not have a path to save at".to_string());
         }
@@ -433,6 +453,10 @@ fn convert_screen_dimens_to_editor_dimens(
         screen_cols,
         screen_rows - STATUS_BAR_HEIGHT - STATUS_MSG_HEIGHT,
     )
+}
+
+fn compute_hash(buffer: &[String]) -> Vec<u8> {
+    sha1::Sha1::digest(buffer.join("").as_bytes()).to_vec()
 }
 
 fn is_whitespace(byte: u8) -> bool {
