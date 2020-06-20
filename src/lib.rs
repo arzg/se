@@ -311,26 +311,37 @@ impl Editor {
     }
 
     fn backspace(&mut self) {
-        // TODO: handle line joining.
         if self.cursor_x == 0 {
-            return;
+            if self.cursor_y == 0 {
+                return;
+            }
+
+            let above_row_num_graphemes = self.buffer[self.cursor_y - 1].graphemes(true).count();
+
+            let current_row = self.buffer[self.cursor_y].clone();
+            self.buffer[self.cursor_y - 1].push_str(&current_row);
+
+            self.buffer.remove(self.cursor_y);
+
+            self.cursor_y -= 1;
+            self.cursor_x = above_row_num_graphemes;
+        } else {
+            self.buffer[self.cursor_y] = self.buffer[self.cursor_y]
+                .graphemes(true)
+                .enumerate()
+                // Remove the grapheme whose index is one less than the cursor’s position; in other
+                // words, remove the grapheme before the cursor.
+                .filter_map(|(idx, grapheme)| {
+                    if idx == self.cursor_x - 1 {
+                        None
+                    } else {
+                        Some(grapheme)
+                    }
+                })
+                .collect();
+
+            self.cursor_x -= 1;
         }
-
-        self.buffer[self.cursor_y] = self.buffer[self.cursor_y]
-            .graphemes(true)
-            .enumerate()
-            // Remove the grapheme whose index is one less than the cursor’s position; in other
-            // words, remove the grapheme before the cursor.
-            .filter_map(|(idx, grapheme)| {
-                if idx == self.cursor_x - 1 {
-                    None
-                } else {
-                    Some(grapheme)
-                }
-            })
-            .collect();
-
-        self.cursor_x -= 1;
 
         self.update_modified_status();
     }
