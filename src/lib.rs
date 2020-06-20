@@ -244,6 +244,7 @@ impl Editor {
                 KeyCode::Right => self.cursor_x += 1,
                 KeyCode::Up => self.cursor_y = self.cursor_y.saturating_sub(1),
                 KeyCode::Down => self.cursor_y += 1,
+                KeyCode::Backspace => self.backspace(),
                 KeyCode::PageUp => {
                     self.cursor_y = self.cursor_y.saturating_sub(self.editor_rows / 2)
                 }
@@ -305,6 +306,31 @@ impl Editor {
         let cursor_x_byte_pos = self.cursor_x_byte_pos();
         self.buffer[self.cursor_y].insert(cursor_x_byte_pos, c);
         self.cursor_x += 1; // A char can only be one grapheme
+
+        self.update_modified_status();
+    }
+
+    fn backspace(&mut self) {
+        // TODO: handle line joining.
+        if self.cursor_x == 0 {
+            return;
+        }
+
+        self.buffer[self.cursor_y] = self.buffer[self.cursor_y]
+            .graphemes(true)
+            .enumerate()
+            // Remove the grapheme whose index is one less than the cursor’s position; in other
+            // words, remove the grapheme before the cursor.
+            .filter_map(|(idx, grapheme)| {
+                if idx == self.cursor_x - 1 {
+                    None
+                } else {
+                    Some(grapheme)
+                }
+            })
+            .collect();
+
+        self.cursor_x -= 1;
 
         self.update_modified_status();
     }
