@@ -215,7 +215,7 @@ impl Editor {
         Ok(())
     }
 
-    pub fn process_keypress(&mut self, key_event: event::KeyEvent) -> anyhow::Result<ControlFlow> {
+    pub fn process_keypress(&mut self, key_event: event::KeyEvent) -> ControlFlow {
         // The KeyEvents provided by crossterm do not contain capital letters -- instead, they
         // contain a lowercase char and a shift modifier. Here, this is converted to an uppercase
         // char with no modifiers.
@@ -234,7 +234,7 @@ impl Editor {
                     self.process_keypress(KeyEvent {
                         code: KeyCode::Char(*c),
                         modifiers: KeyModifiers::NONE,
-                    })?;
+                    });
                 }
 
                 KeyEvent {
@@ -252,13 +252,13 @@ impl Editor {
                 code: KeyCode::Char('q'),
                 modifiers: KeyModifiers::CONTROL,
             } => match (self.is_modified, self.quit_without_saving) {
-                (true, true) | (false, _) => return Ok(ControlFlow::Break),
+                (true, true) | (false, _) => return ControlFlow::Break,
                 (true, false) => {
                     self.set_status_msg(
                         "Buffer is modified! Press C-q again to quit without saving.".to_string(),
                     );
                     self.quit_without_saving = true;
-                    return Ok(ControlFlow::Continue);
+                    return ControlFlow::Continue;
                 }
             },
 
@@ -297,7 +297,7 @@ impl Editor {
         self.limit_cursor_pos_to_buffer_contents();
         self.scroll();
 
-        Ok(ControlFlow::Continue)
+        ControlFlow::Continue
     }
 
     fn limit_cursor_pos_to_buffer_contents(&mut self) {

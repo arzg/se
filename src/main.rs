@@ -49,7 +49,7 @@ fn run(opts: Opts, stdout: &mut io::Stdout) -> anyhow::Result<()> {
     loop {
         let refresh = match event::read()? {
             Event::Key(key_event) => {
-                if let se::ControlFlow::Break = editor.process_keypress(key_event)? {
+                if let se::ControlFlow::Break = editor.process_keypress(key_event) {
                     break;
                 }
                 Some(se::Refresh::Partial)
