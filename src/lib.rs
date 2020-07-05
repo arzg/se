@@ -216,6 +216,37 @@ impl Editor {
     }
 
     pub fn process_keypress(&mut self, key_event: event::KeyEvent) -> anyhow::Result<ControlFlow> {
+        // The KeyEvents provided by crossterm do not contain capital letters -- instead, they
+        // contain a lowercase char and a shift modifier. Here, this is converted to an uppercase
+        // char with no modifiers.
+        let key_event = match key_event {
+            KeyEvent {
+                code: KeyCode::Char(c),
+                modifiers: KeyModifiers::SHIFT,
+            } => {
+                // Converting a char to uppercase can result in more than one char. To allow for
+                // this, we process each of the characters (apart from the last one) through the use
+                // of recursion. Then, we finally process the last character non-recursively.
+
+                let uppercase_chars: Vec<_> = c.to_uppercase().collect();
+
+                for c in uppercase_chars[..uppercase_chars.len() - 1].iter() {
+                    self.process_keypress(KeyEvent {
+                        code: KeyCode::Char(*c),
+                        modifiers: KeyModifiers::NONE,
+                    })?;
+                }
+
+                KeyEvent {
+                    // We can unwrap because converting a character to uppercase always results in
+                    // at least one character, so the last element of the vector must exist.
+                    code: KeyCode::Char(*uppercase_chars.last().unwrap()),
+                    modifiers: KeyModifiers::NONE,
+                }
+            }
+            _ => key_event,
+        };
+
         match key_event {
             KeyEvent {
                 code: KeyCode::Char('q'),
