@@ -2,7 +2,6 @@
 
 use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::{cursor, queue, terminal};
-use sha1::Digest;
 use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
@@ -29,7 +28,7 @@ pub struct Editor {
     path: Option<PathBuf>,
     status_msg: Option<StatusMsg>,
     renderer: Renderer,
-    unmodified_hash: Vec<u8>,
+    unmodified_hash: u64,
     is_modified: bool,
     quit_without_saving: bool,
 }
@@ -538,8 +537,8 @@ fn convert_screen_dimens_to_editor_dimens(
     )
 }
 
-fn compute_hash(buffer: &[String]) -> Vec<u8> {
-    sha1::Sha1::digest(buffer.join("\n").as_bytes()).to_vec()
+fn compute_hash(buffer: &[String]) -> u64 {
+    seahash::hash(buffer.join("\n").as_bytes())
 }
 
 fn is_whitespace(byte: u8) -> bool {
