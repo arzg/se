@@ -1,15 +1,17 @@
 #![warn(rust_2018_idioms)]
 
+mod width_limited;
+
 use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::{cursor, queue, terminal};
 use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
-use std::ops::Deref;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
+use width_limited::WidthLimited;
 
 const WELCOME_MSG: &str = concat!("se v", env!("CARGO_PKG_VERSION"), " · A screen editor.");
 const STATUS_BAR_HEIGHT: usize = 1;
@@ -534,49 +536,6 @@ impl Renderer {
 pub enum ControlFlow {
     Continue,
     Break,
-}
-
-struct WidthLimited<
-    T: UnicodeWidthStr + ?Sized,
-    Item: Deref<Target = T>,
-    Iter: Iterator<Item = Item>,
-> {
-    iter: Iter,
-    total_width: usize,
-    max_width: usize,
-}
-
-impl<T: UnicodeWidthStr + ?Sized, Item: Deref<Target = T>, Iter: Iterator<Item = Item>>
-    WidthLimited<T, Item, Iter>
-{
-    fn new(items: Iter, max_width: usize) -> Self {
-        Self {
-            iter: items,
-            total_width: 0,
-            max_width,
-        }
-    }
-}
-
-impl<T: UnicodeWidthStr + ?Sized, Item: Deref<Target = T>, Iter: Iterator<Item = Item>> Iterator
-    for WidthLimited<T, Item, Iter>
-{
-    type Item = Item;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.total_width >= self.max_width {
-            return None;
-        }
-
-        let item = self.iter.next()?;
-        let item_width = item.width();
-
-        if item_width + self.total_width <= self.max_width {
-            Some(item)
-        } else {
-            None
-        }
-    }
 }
 
 fn convert_screen_dimens_to_editor_dimens(
