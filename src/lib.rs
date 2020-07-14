@@ -5,6 +5,7 @@ use crossterm::{cursor, queue, terminal};
 use std::convert::{TryFrom, TryInto};
 use std::fs;
 use std::io::{self, Write};
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 use unicode_segmentation::UnicodeSegmentation;
@@ -25,6 +26,7 @@ pub struct Editor {
     row_offset: usize,
     col_offset: usize,
     buffer: Vec<String>,
+    highlighted_buffer: Vec<Vec<dialect::StyledGrapheme>>,
     path: Option<PathBuf>,
     status_msg: Option<StatusMsg>,
     renderer: Renderer,
@@ -34,6 +36,9 @@ pub struct Editor {
 }
 
 impl Editor {
+    const HIGHLIGHTER: syntax_rust::Highlighter = syntax_rust::Highlighter;
+    const THEME: dialect::themes::DarkPlus = dialect::themes::DarkPlus;
+
     pub fn open(path: Option<PathBuf>) -> anyhow::Result<Self> {
         let (screen_cols, screen_rows) = terminal::size()?;
 
@@ -64,6 +69,7 @@ impl Editor {
             row_offset: 0,
             col_offset: 0,
             buffer,
+            highlighted_buffer: Vec::new(),
             path,
             status_msg: None,
             renderer: Renderer::new(screen_rows),
@@ -111,18 +117,16 @@ impl Editor {
 
     fn draw_rows(&self, writer: &mut impl Write) -> anyhow::Result<()> {
         for i in 0..self.editor_rows {
-            if let Some(line) = self.buffer.get(i + self.row_offset) {
-                let graphemes = line.graphemes(true);
-                let width = line.width();
-                let reaches_left_of_editor = width > self.col_offset;
+            if let Some(line) = self.highlighted_buffer.get(i + self.row_offset) {
+                let scrolled =
+                    take_until_width(line.iter().skip(self.col_offset), self.editor_cols);
 
-                let line: String = if reaches_left_of_editor {
-                    slice_graphemes(graphemes.skip(self.col_offset), self.editor_cols)
-                } else {
-                    String::new()
-                };
+                let rendered = scrolled.into_iter().map(|styled_grapheme| {
+                    let style = ansi_term::Style::from(styled_grapheme.style);
+                    style.paint(styled_grapheme.grapheme.as_str()).to_string()
+                });
 
-                write!(writer, "{}", line)?;
+                write!(writer, "{}", rendered.collect::<String>())?;
             } else {
                 self.draw_empty_row(writer, i)?;
             }
@@ -206,7 +210,13 @@ impl Editor {
 
         if let Some(status_msg) = status_msg {
             let graphemes = status_msg.text.graphemes(true);
-            write!(writer, "{}", slice_graphemes(graphemes, self.screen_cols))?;
+            write!(
+                writer,
+                "{}",
+                take_until_width(graphemes, self.screen_cols)
+                    .into_iter()
+                    .collect::<String>()
+            )?;
         } else {
             queue!(writer, terminal::Clear(terminal::ClearType::CurrentLine))?;
         }
@@ -338,7 +348,7 @@ impl Editor {
         self.buffer[self.cursor_y].insert(cursor_x_byte_pos, c);
         self.cursor_x += 1; // A char can only be one grapheme
 
-        self.update_modified_status();
+        self.update_on_modified_buffer();
     }
 
     fn backspace(&mut self) {
@@ -374,7 +384,7 @@ impl Editor {
             self.cursor_x -= 1;
         }
 
-        self.update_modified_status();
+        self.update_on_modified_buffer();
     }
 
     fn enter(&mut self) {
@@ -388,7 +398,23 @@ impl Editor {
         self.cursor_y += 1;
         self.cursor_x = 0;
 
+        self.update_on_modified_buffer();
+    }
+
+    fn update_on_modified_buffer(&mut self) {
+        self.update_highlighting();
         self.update_modified_status();
+    }
+
+    fn update_highlighting(&mut self) {
+        let buffer = self.buffer.join("\n");
+        let styled_graphemes = dialect::render(&buffer, Self::HIGHLIGHTER, Self::THEME);
+
+        // Split by lines.
+        self.highlighted_buffer = styled_graphemes
+            .split(|styled_grapheme| styled_grapheme.grapheme.contains('\n'))
+            .map(Vec::from)
+            .collect();
     }
 
     fn update_modified_status(&mut self) {
@@ -512,13 +538,19 @@ pub enum ControlFlow {
     Break,
 }
 
-fn slice_graphemes<'a>(graphemes: impl Iterator<Item = &'a str>, max_width: usize) -> String {
-    let mut output = String::with_capacity(max_width);
+fn take_until_width<T: UnicodeWidthStr + ?Sized, U: Deref<Target = T>, Iter: Iterator<Item = U>>(
+    items: Iter,
+    max_width: usize,
+) -> Vec<U> {
+    let mut output = Vec::new();
+    let mut total_width = 0;
 
-    // Keep adding graphemes to the output while they’re small enough to fit.
-    for grapheme in graphemes {
-        if output.width() + grapheme.width() <= max_width {
-            output.push_str(grapheme);
+    for item in items {
+        let width = item.width();
+
+        if total_width + width <= max_width {
+            output.push(item);
+            total_width += width;
         } else {
             break;
         }
