@@ -509,8 +509,6 @@ impl Renderer {
     fn update(&mut self, new: Vec<u8>) {
         let new: Vec<_> = new.split(|b| is_whitespace(*b)).map(Vec::from).collect();
 
-        debug_assert_eq!(self.current.len(), new.len());
-
         self.previous = self.current.clone();
         self.current = new;
     }
@@ -518,15 +516,30 @@ impl Renderer {
     fn render(&self, writer: &mut impl Write, refresh: Refresh) -> anyhow::Result<()> {
         queue!(writer, cursor::Hide, cursor::MoveTo(0, 0))?;
 
-        for (i, (current_line, previous_line)) in
-            self.current.iter().zip(&self.previous).enumerate()
-        {
-            if refresh == Refresh::Full || current_line != previous_line {
-                let i = i.try_into()?;
-                queue!(writer, cursor::MoveTo(0, i))?;
+        let mut write_line = |i: usize, line| -> anyhow::Result<()> {
+            let i = i.try_into()?;
+            queue!(writer, cursor::MoveTo(0, i))?;
 
-                writer.write_all(current_line)?;
+            writer.write_all(line)?;
+
+            Ok(())
+        };
+
+        let mut i = 0;
+
+        loop {
+            match (self.current.get(i), self.previous.get(i)) {
+                (Some(current_line), Some(previous_line)) => {
+                    if refresh == Refresh::Full || current_line != previous_line {
+                        write_line(i, current_line)?;
+                    }
+                }
+                (Some(current_line), None) => write_line(i, current_line)?,
+                (None, Some(_)) => {}
+                (None, None) => break,
             }
+
+            i += 1;
         }
 
         Ok(())
