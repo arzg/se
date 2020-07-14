@@ -119,9 +119,9 @@ impl Editor {
         for i in 0..self.editor_rows {
             if let Some(line) = self.highlighted_buffer.get(i + self.row_offset) {
                 let scrolled =
-                    take_until_width(line.iter().skip(self.col_offset), self.editor_cols);
+                    WidthLimited::new(line.iter().skip(self.col_offset), self.editor_cols);
 
-                let rendered = scrolled.into_iter().map(|styled_grapheme| {
+                let rendered = scrolled.map(|styled_grapheme| {
                     let style = ansi_term::Style::from(styled_grapheme.style);
                     style.paint(styled_grapheme.grapheme.as_str()).to_string()
                 });
@@ -213,9 +213,7 @@ impl Editor {
             write!(
                 writer,
                 "{}",
-                take_until_width(graphemes, self.screen_cols)
-                    .into_iter()
-                    .collect::<String>()
+                WidthLimited::new(graphemes, self.screen_cols).collect::<String>()
             )?;
         } else {
             queue!(writer, terminal::Clear(terminal::ClearType::CurrentLine))?;
@@ -538,25 +536,47 @@ pub enum ControlFlow {
     Break,
 }
 
-fn take_until_width<T: UnicodeWidthStr + ?Sized, U: Deref<Target = T>, Iter: Iterator<Item = U>>(
-    items: Iter,
+struct WidthLimited<
+    T: UnicodeWidthStr + ?Sized,
+    Item: Deref<Target = T>,
+    Iter: Iterator<Item = Item>,
+> {
+    iter: Iter,
+    total_width: usize,
     max_width: usize,
-) -> Vec<U> {
-    let mut output = Vec::new();
-    let mut total_width = 0;
+}
 
-    for item in items {
-        let width = item.width();
-
-        if total_width + width <= max_width {
-            output.push(item);
-            total_width += width;
-        } else {
-            break;
+impl<T: UnicodeWidthStr + ?Sized, Item: Deref<Target = T>, Iter: Iterator<Item = Item>>
+    WidthLimited<T, Item, Iter>
+{
+    fn new(items: Iter, max_width: usize) -> Self {
+        Self {
+            iter: items,
+            total_width: 0,
+            max_width,
         }
     }
+}
 
-    output
+impl<T: UnicodeWidthStr + ?Sized, Item: Deref<Target = T>, Iter: Iterator<Item = Item>> Iterator
+    for WidthLimited<T, Item, Iter>
+{
+    type Item = Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.total_width >= self.max_width {
+            return None;
+        }
+
+        let item = self.iter.next()?;
+        let item_width = item.width();
+
+        if item_width + self.total_width <= self.max_width {
+            Some(item)
+        } else {
+            None
+        }
+    }
 }
 
 fn convert_screen_dimens_to_editor_dimens(
